@@ -133,8 +133,11 @@ export class ShellComponent implements OnInit, OnDestroy {
       ],
     },
     {
-      title: 'Học vụ & Đào tạo',
-      items: [{ label: 'Phê duyệt điểm & Đăng ký', path: '/dao-tao/quan-ly-diem', icon: '⚖️' }],
+      title: 'Học vụ & Thống kê',
+      items: [
+        { label: 'Phê duyệt điểm & Đăng ký', path: '/dao-tao/quan-ly-diem', icon: '⚖️' },
+        { label: 'Thống kê', path: '/thong-ke/gpa', icon: '📈' },
+      ],
     },
   ];
 

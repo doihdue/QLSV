@@ -188,9 +188,13 @@ export class StudentPortalComponent implements OnInit {
           dot.tenDot = `Đợt đăng ký tín chỉ Học kỳ ${dot.hocKy} (${dot.namHoc})`;
         }
         this.currentDot = dot;
-        if (dot) {
+        if (dot && dot.hocKy && dot.namHoc) {
+          const changed = this.regHocKy !== dot.hocKy || this.regNamHoc !== dot.namHoc;
           this.regHocKy = dot.hocKy;
           this.regNamHoc = dot.namHoc;
+          if (changed && this.mode === 'registration') {
+            this.loadRegistrationData();
+          }
         }
         this.cd.markForCheck();
       },
@@ -295,32 +299,19 @@ export class StudentPortalComponent implements OnInit {
             soTinChi: m.soTinChi,
             soTietLyThuyet: m.soTietLyThuyet,
             soTietThucHanh: m.soTietThucHanh,
-            moTa: m.ghiChu || `Môn mở cho Khóa ${m.khoaHoc ? m.khoaHoc.replace(/\D+/g, '') : ''}${m.tenLop ? ' - Lớp ' + m.tenLop : ''}`,
+            moTa: m.ghiChu || '',
             monHocTienQuyet: m.monHocTienQuyet,
             khoaTen: m.tenKhoa,
+            giangVienTen: m.tenGiangVien || 'Chưa phân công',
+            tenLop: m.tenLop || (m.khoaHoc ? `Toàn khóa ${m.khoaHoc.replace(/\D+/g, '')}` : 'Chung'),
+            maLop: m.maLop,
+            monHocMoId: m.id,
           }));
-          this.loading = false;
-          this.cd.markForCheck();
         } else {
-          // Fallback nếu trường chưa cấu hình môn mở riêng cho khóa: lấy danh mục môn học của khoa
-          this.studentService.getCourses().pipe(catchError(() => of([]))).subscribe({
-            next: (courses) => {
-              if (this.profile?.khoaTen) {
-                const khoaFiltered = courses.filter((c) => c.khoaTen === this.profile?.khoaTen);
-                this.courses = khoaFiltered.length > 0 ? khoaFiltered : courses;
-              } else {
-                this.courses = courses;
-              }
-              this.loading = false;
-              this.cd.markForCheck();
-            },
-            error: () => {
-              this.courses = [];
-              this.loading = false;
-              this.cd.markForCheck();
-            },
-          });
+          this.courses = [];
         }
+        this.loading = false;
+        this.cd.markForCheck();
       },
       error: () => {
         this.loading = false;
@@ -475,7 +466,9 @@ export class StudentPortalComponent implements OnInit {
       const matchSearch =
         !q ||
         c.tenMonHoc.toLowerCase().includes(q) ||
-        c.maMonHoc.toLowerCase().includes(q);
+        c.maMonHoc.toLowerCase().includes(q) ||
+        (c.giangVienTen && c.giangVienTen.toLowerCase().includes(q)) ||
+        (c.tenLop && c.tenLop.toLowerCase().includes(q));
       const matchKhoa =
         !this.selectedKhoaFilter || c.khoaTen === this.selectedKhoaFilter;
       return matchSearch && matchKhoa;

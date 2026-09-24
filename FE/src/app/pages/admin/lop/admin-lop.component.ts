@@ -44,7 +44,7 @@ export class AdminLopComponent implements OnInit {
   protected successMessage = '';
 
   protected readonly form = this.fb.group({
-    maLop: ['', [Validators.required, Validators.maxLength(20)]],
+    maLop: [''],
     tenLop: ['', [Validators.required, Validators.maxLength(150)]],
     nienKhoa: ['2023-2027', [Validators.required, Validators.maxLength(20)]],
     siSoToiDa: [45, [Validators.required, Validators.min(1)]],

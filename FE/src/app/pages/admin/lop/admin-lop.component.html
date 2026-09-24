@@ -10,6 +10,13 @@
     </div>
   </header>
 
+  <div class="tip-banner">
+    <span class="tip-icon">💡</span>
+    <span>
+      Mã lớp hành chính (VD: <code>D2022CNTT01</code>) được hệ thống tự động sinh theo quy tắc <strong>D + [Năm niên khóa] + [Mã khoa] + 01 tăng dần</strong> khi bạn thêm mới lớp.
+    </span>
+  </div>
+
   @if (successMessage) {
     <div class="alert alert-success">{{ successMessage }}</div>
   }
@@ -27,10 +34,15 @@
 
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
-          <label>Mã lớp hành chính <span class="req">*</span></label>
-          <input type="text" formControlName="maLop" placeholder="VD: D21HT01" />
-          @if (form.get('maLop')?.touched && form.get('maLop')?.invalid) {
-            <small class="error-text">Mã lớp hành chính là bắt buộc (tối đa 20 ký tự).</small>
+          <label>Thuộc Khoa <span class="req">*</span></label>
+          <select formControlName="khoaId">
+            <option value="">-- Chọn Khoa --</option>
+            @for (k of khoas; track k.id) {
+              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
+            }
+          </select>
+          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+            <small class="error-text">Vui lòng chọn Khoa.</small>
           }
         </div>
 
@@ -54,18 +66,6 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Thuộc Khoa <span class="req">*</span></label>
-          <select formControlName="khoaId">
-            <option value="">-- Chọn Khoa --</option>
-            @for (k of khoas; track k.id) {
-              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
-            }
-          </select>
-          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
-            <small class="error-text">Vui lòng chọn Khoa.</small>
-          }
-        </div>
 
         <div class="form-group">
           <label class="checkbox-container">

@@ -415,7 +415,15 @@
 
         @if (filteredCourses.length === 0) {
           <div class="empty-state-card">
-            <p>Không tìm thấy môn học nào phù hợp với từ khóa tìm kiếm.</p>
+            @if (courses.length === 0) {
+              <div class="empty-icon">📖</div>
+              <h3>Chưa có môn học nào được mở trong học kỳ này</h3>
+              <p>Học kỳ {{ regHocKy }} ({{ regNamHoc }}) chưa được cấu hình môn học mở cho lớp của bạn. Khi Nhà trường mở môn và bật đợt đăng ký, các môn học của kỳ này sẽ xuất hiện tại đây để bạn đăng ký.</p>
+            } @else {
+              <div class="empty-icon">🔍</div>
+              <h3>Không tìm thấy môn học phù hợp</h3>
+              <p>Không có môn học nào khớp với từ khóa tìm kiếm "{{ courseSearch }}".</p>
+            }
           </div>
         } @else {
           <div class="table-container">
@@ -426,8 +434,9 @@
                   <th>Mã HP</th>
                   <th>Tên học phần</th>
                   <th style="text-align: center;">Số TC</th>
+                  <th>Lớp học phần</th>
+                  <th>Giảng viên</th>
                   <th>Lý thuyết / TH</th>
-                  <th>Khoa phụ trách</th>
                   <th>Môn tiên quyết</th>
                   <th style="text-align: right;">Đăng ký</th>
                 </tr>
@@ -447,12 +456,19 @@
                       </div>
                     </td>
                     <td style="text-align: center;"><span class="credit-badge">{{ course.soTinChi }} TC</span></td>
+                    <td>
+                      <span class="class-badge">{{ course.tenLop || 'Chung' }}</span>
+                    </td>
+                    <td>
+                      <span class="gv-teacher-name" [class.unassigned]="!course.giangVienTen || course.giangVienTen === 'Chưa phân công'">
+                        {{ course.giangVienTen || 'Chưa phân công' }}
+                      </span>
+                    </td>
                     <td>{{ course.soTietLyThuyet || 0 }} LT / {{ course.soTietThucHanh || 0 }} TH</td>
-                    <td>{{ course.khoaTen || 'Khoa chuyên môn' }}</td>
                     <td>{{ course.monHocTienQuyet || 'Không' }}</td>
                     <td style="text-align: right;">
                       @if (isRegistered) {
-                        <span class="status-pill status-active">✓ Đã đăng ký</span>
+                        <span class="status-pill status-active">✓ Đã xác nhận học</span>
                       } @else {
                         <button
                           type="button"
@@ -461,7 +477,7 @@
                           [title]="isSemesterNotOpenYet ? 'Học kỳ này chưa mở đợt đăng ký' : isPastSemester ? 'Học kỳ đã kết thúc' : !isCurrentSemesterOpen ? 'Cổng đăng ký đang đóng' : ''"
                           (click)="registerCourse(course)"
                         >
-                          {{ isSemesterNotOpenYet ? 'Chưa mở' : isPastSemester ? 'Đã kết thúc' : !isCurrentSemesterOpen ? 'Đã khóa' : registeringId === course.id ? 'Đang gửi...' : 'Đăng ký' }}
+                          {{ isSemesterNotOpenYet ? 'Chưa mở' : isPastSemester ? 'Đã kết thúc' : !isCurrentSemesterOpen ? 'Đã khóa' : registeringId === course.id ? 'Đang gửi...' : 'Đăng ký học' }}
                         </button>
                       }
                     </td>

@@ -130,6 +130,54 @@
 .form-group {
   margin-bottom: 16px;
 
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+
+    label {
+      margin-bottom: 0;
+    }
+  }
+
+  .btn-helper-action {
+    background: #eef2ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #4f46e5;
+      color: white;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .helper-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #64748b;
+
+    code {
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #0f172a;
+      font-weight: 600;
+    }
+  }
+
   label {
     display: block;
     margin-bottom: 6px;
@@ -341,14 +389,11 @@
   border: 1px solid #e2e8f0;
 }
 
-.class-badge {
-  font-weight: 700;
-  color: #7c3aed;
-  background: #f5f3ff;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  border: 1px solid #ddd6fe;
+.cohort-text {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-left: 4px;
+  white-space: nowrap;
 }
 
 .email-link {

@@ -11,7 +11,7 @@ public interface MonHocMoRepository extends JpaRepository<MonHocMo, Long> {
     @Query("SELECT m FROM MonHocMo m WHERE m.hocKy = :hocKy AND m.namHoc = :namHoc "
             + "AND (:khoaId IS NULL OR m.khoa.id = :khoaId) "
             + "AND (:khoaHoc IS NULL OR m.khoaHoc = :khoaHoc OR m.khoaHoc = CONCAT('B', :khoaHoc) OR m.khoaHoc = CONCAT('D', :khoaHoc) OR m.khoaHoc LIKE CONCAT('%', :khoaHoc, '%')) "
-            + "AND (:lopId IS NULL OR m.lop.id = :lopId)")
+            + "AND (:lopId IS NULL OR m.lop.id = :lopId OR m.lop IS NULL)")
     List<MonHocMo> findByFilters(
             @Param("hocKy") String hocKy,
             @Param("namHoc") String namHoc,
@@ -47,7 +47,38 @@ public interface MonHocMoRepository extends JpaRepository<MonHocMo, Long> {
             String namHoc
     );
 
+    boolean existsByMonHoc_IdAndLop_IdAndHocKyAndNamHoc(
+            Long monHocId,
+            Long lopId,
+            String hocKy,
+            String namHoc
+    );
+
+    boolean existsByMonHoc_IdAndKhoa_IdAndKhoaHocAndHocKyAndNamHocAndLopIsNull(
+            Long monHocId,
+            Long khoaId,
+            String khoaHoc,
+            String hocKy,
+            String namHoc
+    );
+
     List<MonHocMo> findByGiangVien_MaGiangVien(String maGiangVien);
 
     List<MonHocMo> findByGiangVien_MaGiangVienAndHocKyAndNamHoc(String maGiangVien, String hocKy, String namHoc);
+
+    List<MonHocMo> findByLop_IdAndHocKyAndNamHoc(Long lopId, String hocKy, String namHoc);
+
+    @Query("SELECT m FROM MonHocMo m WHERE m.hocKy = :hocKy AND m.namHoc = :namHoc "
+            + "AND (:khoaId IS NULL OR m.khoa.id = :khoaId) "
+            + "AND (:khoaHoc IS NULL OR m.khoaHoc IS NULL OR m.khoaHoc = '' OR m.khoaHoc = :khoaHoc "
+            + "     OR m.khoaHoc LIKE CONCAT('%', :khoaHoc, '%') "
+            + "     OR (:shortKhoa IS NOT NULL AND (m.khoaHoc = :shortKhoa OR m.khoaHoc = CONCAT('B', :shortKhoa) OR m.khoaHoc = CONCAT('D', :shortKhoa)))) "
+            + "AND m.lop IS NULL")
+    List<MonHocMo> findCohortOpenings(
+            @Param("khoaId") Long khoaId,
+            @Param("khoaHoc") String khoaHoc,
+            @Param("shortKhoa") String shortKhoa,
+            @Param("hocKy") String hocKy,
+            @Param("namHoc") String namHoc
+    );
 }

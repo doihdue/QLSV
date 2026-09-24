@@ -12,6 +12,10 @@ export type Course = {
   moTa?: string;
   monHocTienQuyet?: string;
   khoaTen?: string;
+  giangVienTen?: string;
+  tenLop?: string;
+  maLop?: string;
+  monHocMoId?: number;
 };
 
 export type Registration = {

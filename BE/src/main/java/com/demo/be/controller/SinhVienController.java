@@ -39,6 +39,25 @@ public class SinhVienController {
         return ResponseEntity.ok(sinhVienService.findById(id));
     }
 
+    @GetMapping("/generate-mssv")
+    public ResponseEntity<java.util.Map<String, String>> generateMssv(
+            @org.springframework.web.bind.annotation.RequestParam Long lopId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false)
+            @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate ngayNhapHoc
+    ) {
+        String mssv = sinhVienService.generateNextMssv(lopId, ngayNhapHoc);
+        return ResponseEntity.ok(java.util.Map.of("mssv", mssv));
+    }
+
+    @GetMapping("/generate-email")
+    public ResponseEntity<java.util.Map<String, String>> generateEmail(
+            @org.springframework.web.bind.annotation.RequestParam String hoTen,
+            @org.springframework.web.bind.annotation.RequestParam String mssv
+    ) {
+        String email = SinhVienService.generateEmailFromNameAndMssv(hoTen, mssv);
+        return ResponseEntity.ok(java.util.Map.of("email", email));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<SinhVienResponse> getCurrent(Principal principal) {
         return ResponseEntity.ok(sinhVienService.findByMssv(principal.getName()));

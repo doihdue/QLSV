@@ -49,9 +49,9 @@ export class AdminGiangVienComponent implements OnInit {
   protected successMessage = '';
 
   protected readonly form = this.fb.group({
-    maGiangVien: ['', [Validators.required, Validators.maxLength(20)]],
+    maGiangVien: [''],
     hoTen: ['', [Validators.required, Validators.maxLength(150)]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    email: [''],
     soDienThoai: ['', [Validators.maxLength(20)]],
     hocVi: ['Thạc sĩ', [Validators.required]],
     chuyenMon: ['', [Validators.maxLength(150)]],
@@ -113,9 +113,9 @@ export class AdminGiangVienComponent implements OnInit {
 
     const val = this.form.getRawValue();
     const payload = {
-      maGiangVien: val.maGiangVien?.trim(),
+      maGiangVien: this.editingId === null ? undefined : (val.maGiangVien?.trim() || undefined),
       hoTen: val.hoTen?.trim(),
-      email: val.email?.trim(),
+      email: this.editingId === null ? undefined : (val.email?.trim() || undefined),
       soDienThoai: val.soDienThoai?.trim() || null,
       hocVi: val.hocVi?.trim(),
       chuyenMon: val.chuyenMon?.trim() || null,

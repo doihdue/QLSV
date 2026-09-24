@@ -64,7 +64,7 @@
       [class.active]="activeTab === 'monhocmo'"
       (click)="selectTab('monhocmo')"
     >
-      🏛️ Mở môn theo Khóa & Lớp hành chính
+      👨‍🏫 Phân công GV & Mở môn theo Lớp
     </button>
   </div>
 
@@ -340,10 +340,43 @@
     </div>
   }
 
-  <!-- ==================== TAB 3: MỞ MÔN THEO KHÓA & LỚP HÀNH CHÍNH ==================== -->
+  <!-- ==================== TAB 3: PHÂN CÔNG GIẢNG VIÊN & MỞ MÔN THEO LỚP ==================== -->
   @if (activeTab === 'monhocmo') {
     <div class="tab-content">
-      <!-- Bộ lọc Khoa, Khóa, Kỳ học -->
+      <!-- Banner Hướng dẫn quy trình Phân công GV theo Lớp -->
+      <div class="phan-cong-flow-card">
+        <div class="flow-header">
+          <span class="flow-badge">Quy trình</span>
+          <h3>Phân công Giáo viên cho từng môn của từng Lớp</h3>
+        </div>
+        <div class="flow-steps">
+          <div class="flow-step" [class.step-active]="!moLopId">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              <strong>Lọc chọn Lớp</strong>
+              <span>Chọn Lớp hành chính cần phân công</span>
+            </div>
+          </div>
+          <div class="flow-arrow">➔</div>
+          <div class="flow-step" [class.step-active]="!!moLopId">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              <strong>Xem danh sách môn</strong>
+              <span>Hệ thống hiển thị các môn mở của lớp</span>
+            </div>
+          </div>
+          <div class="flow-arrow">➔</div>
+          <div class="flow-step" [class.step-active]="!!moLopId">
+            <div class="step-num">3</div>
+            <div class="step-text">
+              <strong>Phân công Giảng viên</strong>
+              <span>Chọn Thầy/Cô trực tiếp tại cột Giáo viên</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bộ lọc Khoa, Khóa, Kỳ học và CHỌN LỚP ĐỂ PHÂN CÔNG -->
       <div class="filter-card">
         <div class="filter-controls">
           <div class="control-item">
@@ -364,10 +397,20 @@
             </select>
           </div>
 
-          <div class="control-item flex-2">
+          <div class="control-item flex-2 highlight-lop-box">
+            <label class="label-highlight">🎯 1. CHỌN LỚP ĐỂ PHÂN CÔNG GV:</label>
+            <select [(ngModel)]="moLopId" (ngModelChange)="loadMonHocMoList()" class="select-lop-highlight">
+              <option value="">-- Chọn Lớp cần phân công (hoặc xem tất cả) --</option>
+              @for (l of filteredLopsForMo; track l.id) {
+                <option [value]="l.id">👉 Lớp {{ l.tenLop }} ({{ l.maLop }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="control-item">
             <label>Khoa đào tạo</label>
             <select [(ngModel)]="moKhoaId" (ngModelChange)="loadMonHocMoList()">
-              <option value="">-- Tất cả các Khoa --</option>
+              <option value="">-- Tất cả Khoa --</option>
               @for (k of khoas; track k.id) {
                 <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
               }
@@ -384,39 +427,42 @@
             </select>
           </div>
 
-          <div class="control-item flex-2">
-            <label>Lớp hành chính cụ thể</label>
-            <select [(ngModel)]="moLopId" (ngModelChange)="loadMonHocMoList()">
-              <option value="">-- Toàn bộ các lớp của Khóa --</option>
-              @for (l of filteredLopsForMo; track l.id) {
-                <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
-              }
-            </select>
-          </div>
-
           <div class="control-actions">
             <button type="button" class="primary-button" (click)="openAddMoModal()">
-              + Mở môn vào kỳ này
+              + Mở môn theo Khoa & Khóa
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Bảng danh sách các môn đang được mở -->
+      <!-- Bảng danh sách các môn đang được mở & Phân công giáo viên -->
       <div class="sheet-card">
         <div class="sheet-header">
           <div>
-            <h2>Danh mục môn học mở cho sinh viên đăng ký</h2>
-            <p>Học kỳ {{ moHocKy }} - Năm học {{ moNamHoc }} | Khóa áp dụng: {{ moKhoaHoc ? 'Khóa ' + moKhoaHoc : 'Tất cả khóa' }}</p>
+            @if (selectedLopObj) {
+              <h2>Danh sách môn học của Lớp: <span class="highlight-class-name">{{ selectedLopObj.tenLop }} ({{ selectedLopObj.maLop }})</span></h2>
+              <p>Học kỳ {{ moHocKy }} - Năm học {{ moNamHoc }} | Bạn hãy chọn Giảng viên phụ trách cho từng môn học của lớp này tại cột <strong>"Giáo viên bộ môn"</strong> bên dưới:</p>
+            } @else {
+              <h2>Danh mục môn học mở (Tất cả các Lớp)</h2>
+              <p>Học kỳ {{ moHocKy }} - Năm học {{ moNamHoc }} | 💡 <em>Mẹo:</em> Hãy chọn một Lớp cụ thể ở thanh lọc phía trên để quản lý và phân công Giảng viên cho từng môn của lớp đó.</p>
+            }
           </div>
           <div class="sheet-summary">
-            <span>Đang mở: <strong>{{ monHocMoList.length }}</strong> học phần</span>
+            <span class="summary-pill total">Tổng: <strong>{{ monHocMoList.length }}</strong> môn</span>
+            <span class="summary-pill assigned">🟢 Đã gán GV: <strong>{{ assignedGvCount }}</strong></span>
+            @if (unassignedGvCount > 0) {
+              <span class="summary-pill unassigned">⚠️ Chưa gán: <strong>{{ unassignedGvCount }}</strong></span>
+            }
           </div>
         </div>
 
         @if (monHocMoList.length === 0) {
           <div class="empty-state">
-            <p>Chưa có môn học nào được mở cho điều kiện lọc đã chọn.</p>
+            @if (selectedLopObj) {
+              <p>Lớp <strong>{{ selectedLopObj.tenLop }}</strong> hiện chưa có môn học nào được mở trong Học kỳ {{ moHocKy }} ({{ moNamHoc }}).</p>
+            } @else {
+              <p>Chưa có môn học nào được mở cho điều kiện lọc đã chọn.</p>
+            }
             <button type="button" class="primary-button" (click)="openAddMoModal()">+ Mở môn học ngay</button>
           </div>
         } @else {
@@ -428,10 +474,9 @@
                   <th>Mã môn</th>
                   <th>Tên học phần</th>
                   <th class="text-center">Số TC</th>
-                  <th>Khoa phụ trách</th>
-                  <th>Đối tượng áp dụng</th>
                   <th>Lớp hành chính</th>
-                  <th>Giáo viên bộ môn</th>
+                  <th style="min-width: 250px;">👨‍🏫 Giáo viên bộ môn phụ trách</th>
+                  <th>Khoa phụ trách</th>
                   <th>Ghi chú</th>
                   <th class="text-right">Thao tác</th>
                 </tr>
@@ -442,11 +487,7 @@
                     <td>{{ $index + 1 }}</td>
                     <td><strong class="code-badge">{{ item.monHocMa }}</strong></td>
                     <td><strong>{{ item.tenMonHoc }}</strong></td>
-                    <td class="text-center"><span class="badge-tc">{{ item.soTinChi }} TC</span></td>
-                    <td>{{ item.tenKhoa || '-' }}</td>
-                    <td>
-                      <span class="badge-cohort">Khóa {{ formatCohort(item.khoaHoc) }}</span>
-                    </td>
+                    <td class="text-center">{{ item.soTinChi }} TC</td>
                     <td>
                       @if (item.tenLop) {
                         <span class="badge-subtle">{{ item.tenLop }} ({{ item.maLop }})</span>
@@ -454,7 +495,7 @@
                         <span class="text-muted">Tất cả lớp Khóa {{ formatCohort(item.khoaHoc) }}</span>
                       }
                     </td>
-                    <td>
+                    <td class="col-gv-assign">
                       <div class="gv-assign-cell">
                         <span class="gv-status-dot" [class.assigned]="!!item.giangVienId" [title]="item.giangVienId ? 'Đã phân công giáo viên' : 'Chưa phân công giáo viên'"></span>
                         <select
@@ -464,13 +505,23 @@
                           [class.unassigned]="!item.giangVienId"
                           [class.assigned]="!!item.giangVienId"
                         >
-                          <option value="">-- Chưa phân công GV --</option>
+                          <option value="">-- ⚠️ Bấm để chọn Giảng viên --</option>
                           @for (gv of giangViens; track gv.id) {
-                            <option [value]="gv.id">{{ gv.hoTen }} ({{ gv.maGiangVien }})</option>
+                            <option [value]="gv.id">👨‍🏫 {{ gv.hoTen }} ({{ gv.maGiangVien }})</option>
                           }
                         </select>
                       </div>
+                      @if (item.tenGiangVien) {
+                        <div class="gv-sub-info">
+                          <small class="text-success">✓ {{ item.tenGiangVien }} ({{ item.maGiangVien }})</small>
+                        </div>
+                      } @else {
+                        <div class="gv-sub-info">
+                          <small class="text-warning">⚠️ Chưa có giảng viên phụ trách</small>
+                        </div>
+                      }
                     </td>
+                    <td>{{ item.tenKhoa || '-' }}</td>
                     <td><small class="text-muted">{{ item.ghiChu || '-' }}</small></td>
                     <td class="text-right actions-cell">
                       <button type="button" class="btn-delete" (click)="removeMonHocMo(item)" title="Hủy môn này khỏi danh sách mở">
@@ -501,51 +552,53 @@
           <button type="button" class="btn-close" (click)="closeBatchRegModal()">✕</button>
         </div>
 
-        <form [formGroup]="batchRegForm" (ngSubmit)="saveBatchRegistration()" class="modal-body">
-          <div class="form-group">
-            <label>Chọn Lớp hành chính <span class="req">*</span></label>
-            <select formControlName="lopId">
-              <option value="">-- Chọn Lớp hành chính --</option>
-              @for (l of lops; track l.id) {
-                <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Chọn Môn học <span class="req">*</span></label>
-            <select formControlName="monHocId">
-              <option value="">-- Chọn Môn học --</option>
-              @for (m of monHocs; track m.id) {
-                <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} - {{ m.soTinChi }} TC)</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-row">
+        <form [formGroup]="batchRegForm" (ngSubmit)="saveBatchRegistration()" class="modal-dialog-form">
+          <div class="modal-body">
             <div class="form-group">
-              <label>Học kỳ <span class="req">*</span></label>
-              <select formControlName="hocKy">
-                @for (s of semesters; track s.id) {
-                  <option [value]="s.id">{{ s.name }}</option>
+              <label>Chọn Lớp hành chính <span class="req">*</span></label>
+              <select formControlName="lopId">
+                <option value="">-- Chọn Lớp hành chính --</option>
+                @for (l of lops; track l.id) {
+                  <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
                 }
               </select>
             </div>
 
             <div class="form-group">
-              <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
-                @for (y of academicYears; track y) {
-                  <option [value]="y">{{ y }}</option>
+              <label>Chọn Môn học <span class="req">*</span></label>
+              <select formControlName="monHocId">
+                <option value="">-- Chọn Môn học --</option>
+                @for (m of monHocs; track m.id) {
+                  <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} - {{ m.soTinChi }} TC)</option>
                 }
               </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Học kỳ <span class="req">*</span></label>
+                <select formControlName="hocKy">
+                  @for (s of semesters; track s.id) {
+                    <option [value]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Năm học <span class="req">*</span></label>
+                <select formControlName="namHoc">
+                  @for (y of academicYears; track y) {
+                    <option [value]="y">{{ y }}</option>
+                  }
+                </select>
+              </div>
             </div>
           </div>
 
           <div class="modal-actions">
             <button type="button" class="cancel-button" (click)="closeBatchRegModal()">Hủy bỏ</button>
             <button type="submit" class="primary-button" [disabled]="saving">
-              {{ saving ? 'Đang ghi danh...' : '⚡ Xác nhận ghi danh cả lớp' }}
+              {{ saving ? 'Đang ghi danh...' : '✓ Xác nhận ghi danh cả lớp' }}
             </button>
           </div>
         </form>
@@ -565,51 +618,53 @@
           <button type="button" class="btn-close" (click)="closeAddRegistrationModal()">✕</button>
         </div>
 
-        <form [formGroup]="addRegForm" (ngSubmit)="saveRegistration()" class="modal-body">
-          <div class="form-group">
-            <label>Chọn Sinh viên <span class="req">*</span></label>
-            <select formControlName="sinhVienId">
-              <option value="">-- Chọn Sinh viên --</option>
-              @for (sv of sinhViens; track sv.id) {
-                <option [value]="sv.id">{{ sv.hoTen }} ({{ sv.mssv }}) - Lớp: {{ sv.lopTen || '-' }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Chọn Môn học <span class="req">*</span></label>
-            <select formControlName="monHocId">
-              <option value="">-- Chọn Môn học --</option>
-              @for (m of monHocs; track m.id) {
-                <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} - {{ m.soTinChi }} TC)</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-row">
+        <form [formGroup]="addRegForm" (ngSubmit)="saveRegistration()" class="modal-dialog-form">
+          <div class="modal-body">
             <div class="form-group">
-              <label>Học kỳ <span class="req">*</span></label>
-              <select formControlName="hocKy">
-                @for (s of semesters; track s.id) {
-                  <option [value]="s.id">{{ s.name }}</option>
+              <label>Chọn Sinh viên <span class="req">*</span></label>
+              <select formControlName="sinhVienId">
+                <option value="">-- Chọn Sinh viên --</option>
+                @for (sv of sinhViens; track sv.id) {
+                  <option [value]="sv.id">{{ sv.hoTen }} ({{ sv.mssv }}) - Lớp: {{ sv.lopTen || '-' }}</option>
                 }
               </select>
             </div>
 
             <div class="form-group">
-              <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
-                @for (y of academicYears; track y) {
-                  <option [value]="y">{{ y }}</option>
+              <label>Chọn Môn học <span class="req">*</span></label>
+              <select formControlName="monHocId">
+                <option value="">-- Chọn Môn học --</option>
+                @for (m of monHocs; track m.id) {
+                  <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} - {{ m.soTinChi }} TC)</option>
                 }
               </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Học kỳ <span class="req">*</span></label>
+                <select formControlName="hocKy">
+                  @for (s of semesters; track s.id) {
+                    <option [value]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Năm học <span class="req">*</span></label>
+                <select formControlName="namHoc">
+                  @for (y of academicYears; track y) {
+                    <option [value]="y">{{ y }}</option>
+                  }
+                </select>
+              </div>
             </div>
           </div>
 
           <div class="modal-actions">
             <button type="button" class="cancel-button" (click)="closeAddRegistrationModal()">Hủy bỏ</button>
             <button type="submit" class="primary-button" [disabled]="saving">
-              {{ saving ? 'Đang ghi danh...' : 'Xác nhận đăng ký' }}
+              {{ saving ? 'Đang ghi danh...' : '✓ Xác nhận đăng ký' }}
             </button>
           </div>
         </form>
@@ -629,43 +684,45 @@
           <button type="button" class="btn-close" (click)="closeConfigDotModal()">✕</button>
         </div>
 
-        <form [formGroup]="configDotForm" (ngSubmit)="saveConfigDot()" class="modal-body">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Học kỳ mở <span class="req">*</span></label>
-              <select formControlName="hocKy">
-                @for (s of semesters; track s.id) {
-                  <option [value]="s.id">{{ s.name }}</option>
-                }
-              </select>
+        <form [formGroup]="configDotForm" (ngSubmit)="saveConfigDot()" class="modal-dialog-form">
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Học kỳ mở <span class="req">*</span></label>
+                <select formControlName="hocKy">
+                  @for (s of semesters; track s.id) {
+                    <option [value]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Năm học <span class="req">*</span></label>
+                <select formControlName="namHoc">
+                  @for (y of academicYears; track y) {
+                    <option [value]="y">{{ y }}</option>
+                  }
+                </select>
+              </div>
             </div>
 
             <div class="form-group">
-              <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
-                @for (y of academicYears; track y) {
-                  <option [value]="y">{{ y }}</option>
-                }
-              </select>
+              <label>Tên đợt đăng ký hiển thị</label>
+              <input type="text" formControlName="tenDot" placeholder="VD: Đợt đăng ký tín chỉ chính thức Học kỳ 1 (2026-2027)" />
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Tên đợt đăng ký hiển thị</label>
-            <input type="text" formControlName="tenDot" placeholder="VD: Đợt đăng ký tín chỉ chính thức Học kỳ 1 (2026-2027)" />
-          </div>
-
-          <div class="form-group">
-            <label class="checkbox-container">
-              <input type="checkbox" formControlName="dangMo" />
-              <span>Bật mở cổng cho sinh viên đăng ký ngay bây giờ</span>
-            </label>
+            <div class="form-group">
+              <label class="checkbox-container">
+                <input type="checkbox" formControlName="dangMo" />
+                <span>Bật mở cổng cho sinh viên đăng ký ngay bây giờ</span>
+              </label>
+            </div>
           </div>
 
           <div class="modal-actions">
             <button type="button" class="cancel-button" (click)="closeConfigDotModal()">Hủy bỏ</button>
             <button type="submit" class="primary-button" [disabled]="saving">
-              {{ saving ? 'Đang lưu...' : 'Lưu cấu hình đợt' }}
+              {{ saving ? 'Đang lưu...' : '✓ Lưu cấu hình đợt' }}
             </button>
           </div>
         </form>
@@ -673,108 +730,92 @@
     </div>
   }
 
-  <!-- MODAL: THÊM MÔN VÀO KỲ MỞ (TAB 3) -->
+  <!-- MODAL: MỞ MÔN THEO KHOA & KHÓA (TAB 3) -->
   @if (showAddMoModal) {
     <div class="modal-overlay" (click)="closeAddMoModal()">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
-            <h3>Thêm môn học vào kỳ đăng ký</h3>
-            <p>Phân bổ môn học mở cho Khoa, Khóa và phân công Giảng viên giảng dạy</p>
+            <h3>Mở môn học theo Khoa & Khóa</h3>
+            <p>Tất cả các lớp thuộc Khoa và cùng Khóa sẽ tự động có môn học này</p>
           </div>
           <button type="button" class="btn-close" (click)="closeAddMoModal()">✕</button>
         </div>
 
-        <form [formGroup]="addMoForm" (ngSubmit)="submitAddMo()" class="modal-body">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Học kỳ <span class="req">*</span></label>
-              <select formControlName="hocKy">
-                @for (s of semesters; track s.id) {
-                  <option [value]="s.id">{{ s.name }}</option>
+        <form [formGroup]="addMoForm" (ngSubmit)="submitAddMo()" class="modal-dialog-form">
+          <div class="modal-body">
+            <div class="cohort-notice-box">
+              <span class="notice-icon">📢</span>
+              <div class="notice-text">
+                <strong>Quy tắc mở môn:</strong> Môn học được mở chung cho toàn bộ các lớp trong cùng <strong>Khoa</strong> và <strong>Khóa</strong>. Sau khi mở môn, bạn chọn từng Lớp ở bảng danh sách để phân công Giáo viên phụ trách.
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Học kỳ <span class="req">*</span></label>
+                <select formControlName="hocKy">
+                  @for (s of semesters; track s.id) {
+                    <option [value]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Năm học <span class="req">*</span></label>
+                <select formControlName="namHoc">
+                  @for (y of academicYears; track y) {
+                    <option [value]="y">{{ y }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Khoa đào tạo <span class="req">*</span></label>
+                <select formControlName="khoaId">
+                  <option value="">-- Chọn Khoa --</option>
+                  @for (k of khoas; track k.id) {
+                    <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
+                  }
+                </select>
+                @if (addMoForm.get('khoaId')?.touched && addMoForm.get('khoaId')?.invalid) {
+                  <small class="error-text">Vui lòng chọn Khoa.</small>
                 }
-              </select>
+              </div>
+
+              <div class="form-group">
+                <label>Khóa học áp dụng <span class="req">*</span></label>
+                <select formControlName="khoaHoc">
+                  @for (c of cohortOptions; track c) {
+                    <option [value]="c">Khóa {{ c }}</option>
+                  }
+                </select>
+              </div>
             </div>
 
             <div class="form-group">
-              <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
-                @for (y of academicYears; track y) {
-                  <option [value]="y">{{ y }}</option>
+              <label>Môn học cần mở <span class="req">*</span></label>
+              <select formControlName="monHocId">
+                <option value="">-- Chọn môn học để mở cho Khóa này --</option>
+                @for (m of filteredMonHocsForMo; track m.id) {
+                  <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} · {{ m.soTinChi }} TC)</option>
                 }
               </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Khoa đào tạo <span class="req">*</span></label>
-              <select formControlName="khoaId">
-                <option value="">-- Chọn Khoa --</option>
-                @for (k of khoas; track k.id) {
-                  <option [value]="k.id">{{ k.tenKhoa }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Khóa học áp dụng <span class="req">*</span></label>
-              <select formControlName="khoaHoc">
-                @for (c of cohortOptions; track c) {
-                  <option [value]="c">Khóa {{ c }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Môn học mở <span class="req">*</span></label>
-            <select formControlName="monHocId">
-              <option value="">-- Chọn môn học để mở --</option>
-              @for (m of filteredMonHocsForMo; track m.id) {
-                <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} · {{ m.soTinChi }} TC)</option>
+              @if (addMoForm.get('monHocId')?.touched && addMoForm.get('monHocId')?.invalid) {
+                <small class="error-text">Vui lòng chọn môn học cần mở.</small>
               }
-            </select>
-            @if (addMoForm.get('monHocId')?.touched && addMoForm.get('monHocId')?.invalid) {
-              <small class="error-text">Vui lòng chọn môn học cần mở.</small>
-            }
-          </div>
-
-          <div class="form-group">
-            <label>Lớp hành chính cụ thể <span class="opt">(Tùy chọn)</span></label>
-            <select formControlName="lopId">
-              <option value="">-- Áp dụng cho toàn bộ các lớp thuộc Khóa này --</option>
-              @for (l of filteredLopsForMo; track l.id) {
-                <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
-              }
-            </select>
-            <div class="scope-hint">
-              <span class="hint-icon">💡</span>
-              <span>Nếu để trống, <strong>toàn bộ sinh viên Khóa {{ addMoForm.get('khoaHoc')?.value }}</strong> của Khoa đều được đăng ký môn học này.</span>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Giáo viên bộ môn phụ trách <span class="opt">(Tùy chọn)</span></label>
-            <select formControlName="giangVienId">
-              <option value="">-- Chọn Giáo viên bộ môn (hoặc gán sau) --</option>
-              @for (gv of giangViens; track gv.id) {
-                <option [value]="gv.id">{{ gv.hoTen }} ({{ gv.maGiangVien }})</option>
-              }
-            </select>
-            <div class="scope-hint">
-              <span class="hint-icon">👨‍🏫</span>
-              <span>Một giáo viên có thể được phân công dạy nhiều môn hoặc nhiều lớp khác nhau.</span>
+            <div class="form-group">
+              <label>Ghi chú <span class="opt">(Tùy chọn)</span></label>
+              <input
+                type="text"
+                formControlName="ghiChu"
+                placeholder="VD: Môn học bắt buộc toàn khóa, Môn chuyên ngành..."
+              />
             </div>
-          </div>
-
-          <div class="form-group">
-            <label>Ghi chú <span class="opt">(Tùy chọn)</span></label>
-            <input
-              type="text"
-              formControlName="ghiChu"
-              placeholder="VD: Môn học bắt buộc, Môn chuyên ngành..."
-            />
           </div>
 
           <div class="modal-footer">
@@ -783,7 +824,7 @@
               @if (saving) {
                 <span class="spinner-small"></span> Đang lưu...
               } @else {
-                <span>✓</span> Thêm vào kỳ mở
+                <span>✓</span> Xác nhận mở môn cho Khóa
               }
             </button>
           </div>

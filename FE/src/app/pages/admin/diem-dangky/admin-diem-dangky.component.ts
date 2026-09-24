@@ -83,7 +83,7 @@ export class AdminDiemDangKyComponent implements OnInit {
   protected khoas: KhoaOption[] = [];
   protected lops: LopOption[] = [];
   protected giangViens: GiangVienOption[] = [];
-  protected readonly cohortOptions = ['20', '21', '22', '23', '24', '25', '26'];
+  protected readonly cohortOptions = ['2020', '2021', '2022', '2023', '2024', '2025', '2026'];
 
   protected readonly semesters = [
     { id: '1', name: 'Học kỳ 1' },
@@ -109,20 +109,18 @@ export class AdminDiemDangKyComponent implements OnInit {
   protected moNamHoc: string = '2026-2027';
   protected moHocKy: string = '1';
   protected moKhoaId: string = '';
-  protected moKhoaHoc: string = '22';
+  protected moKhoaHoc: string = '2023';
   protected moLopId: string = '';
   protected monHocMoList: MonHocMo[] = [];
 
-  // Modal: Thêm môn vào kỳ mở
+  // Modal: Mở môn theo Khoa & Khóa
   protected showAddMoModal = false;
   protected readonly addMoForm = this.fb.group({
     monHocId: ['', Validators.required],
     khoaId: ['', Validators.required],
-    khoaHoc: ['22', Validators.required],
+    khoaHoc: ['2023', Validators.required],
     hocKy: ['1', Validators.required],
     namHoc: ['2026-2027', Validators.required],
-    lopId: [''],
-    giangVienId: [''],
     ghiChu: [''],
   });
 
@@ -549,15 +547,32 @@ export class AdminDiemDangKyComponent implements OnInit {
     });
   }
 
-  // ==================== MỞ MÔN THEO KHÓA & LỚP ====================
+  // ==================== MỞ MÔN THEO KHÓA & PHÂN CÔNG THEO LỚP ====================
   protected loadMonHocMoList(): void {
+    if (this.moLopId) {
+      const params: any = {
+        hocKy: this.moHocKy,
+        namHoc: this.moNamHoc,
+      };
+      this.http.get<MonHocMo[]>(`http://localhost:8080/api/mon-hoc-mo/lop/${this.moLopId}`, { params }).subscribe({
+        next: (res) => {
+          this.monHocMoList = res;
+          this.cd.detectChanges();
+        },
+        error: () => {
+          this.errorMessage = 'Không thể tải danh sách môn học của lớp này.';
+          this.cd.detectChanges();
+        },
+      });
+      return;
+    }
+
     let params: any = {
       hocKy: this.moHocKy,
       namHoc: this.moNamHoc,
     };
     if (this.moKhoaId) params.khoaId = this.moKhoaId;
     if (this.moKhoaHoc) params.khoaHoc = this.moKhoaHoc;
-    if (this.moLopId) params.lopId = this.moLopId;
 
     this.http.get<MonHocMo[]>('http://localhost:8080/api/mon-hoc-mo', { params }).subscribe({
       next: (res) => {
@@ -572,15 +587,15 @@ export class AdminDiemDangKyComponent implements OnInit {
   }
 
   protected get filteredMonHocsForMo(): MonHocOption[] {
-    const selectedKhoaId = this.addMoForm.get('khoaId')?.value;
+    const selectedKhoaId = this.addMoForm.get('khoaId')?.value || this.moKhoaId;
     if (!selectedKhoaId) return this.monHocs;
     const kId = Number(selectedKhoaId);
     return this.monHocs.filter((m) => !m.khoaId || m.khoaId === kId);
   }
 
   protected get filteredLopsForMo(): LopOption[] {
-    const selectedKhoaId = this.addMoForm.get('khoaId')?.value || this.moKhoaId;
-    const selectedKhoaHoc = (this.addMoForm.get('khoaHoc')?.value || this.moKhoaHoc || '').replace(/\D+/g, '');
+    const selectedKhoaId = this.moKhoaId;
+    const selectedKhoaHoc = (this.moKhoaHoc || '').replace(/\D+/g, '');
     return this.lops.filter((l) => {
       const matchKhoa = !selectedKhoaId || !l.khoaId || l.khoaId === Number(selectedKhoaId);
       const matchKhoaHoc =
@@ -591,14 +606,27 @@ export class AdminDiemDangKyComponent implements OnInit {
     });
   }
 
+  protected get selectedLopObj(): LopOption | undefined {
+    if (!this.moLopId) return undefined;
+    const lid = Number(this.moLopId);
+    return this.lops.find((l) => l.id === lid);
+  }
+
+  protected get assignedGvCount(): number {
+    return this.monHocMoList.filter((m) => !!m.giangVienId).length;
+  }
+
+  protected get unassignedGvCount(): number {
+    return this.monHocMoList.filter((m) => !m.giangVienId).length;
+  }
+
   protected openAddMoModal(): void {
     this.addMoForm.patchValue({
       khoaId: this.moKhoaId || (this.khoas.length > 0 ? String(this.khoas[0].id) : ''),
-      khoaHoc: this.moKhoaHoc || '22',
+      khoaHoc: this.moKhoaHoc || '2023',
       hocKy: this.moHocKy,
       namHoc: this.moNamHoc,
-      lopId: this.moLopId || '',
-      giangVienId: '',
+      monHocId: '',
       ghiChu: '',
     });
     this.showAddMoModal = true;
@@ -622,8 +650,8 @@ export class AdminDiemDangKyComponent implements OnInit {
       khoaHoc: cleanKhoa || rawKhoa,
       hocKy: val.hocKy,
       namHoc: val.namHoc,
-      lopId: val.lopId ? Number(val.lopId) : null,
-      giangVienId: val.giangVienId ? Number(val.giangVienId) : null,
+      lopId: null,
+      giangVienId: null,
       ghiChu: val.ghiChu?.trim() || null,
     };
 
@@ -635,13 +663,13 @@ export class AdminDiemDangKyComponent implements OnInit {
       next: (res) => {
         this.saving = false;
         this.closeAddMoModal();
-        this.successMessage = `Đã thêm môn "${res.tenMonHoc}" vào kỳ mở cho khóa ${res.khoaHoc}!`;
+        this.successMessage = `Đã mở môn "${res.tenMonHoc}" cho toàn bộ các lớp thuộc Khóa ${res.khoaHoc} (${res.tenKhoa || ''})!`;
         this.loadMonHocMoList();
         this.cd.detectChanges();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Không thể thêm môn học vào kỳ mở.';
+        this.errorMessage = err?.error?.message || 'Không thể mở môn học cho khóa này.';
         this.cd.detectChanges();
       },
     });
@@ -670,13 +698,18 @@ export class AdminDiemDangKyComponent implements OnInit {
   }
 
   protected removeMonHocMo(item: MonHocMo): void {
-    if (!confirm(`Bạn có chắc muốn xóa môn "${item.tenMonHoc}" (${item.monHocMa}) khỏi danh mục mở của khóa ${item.khoaHoc}?`)) {
+    const isClassSpecific = !!item.tenLop;
+    const msg = isClassSpecific
+      ? `Bạn có chắc muốn hủy môn "${item.tenMonHoc}" (${item.monHocMa}) của lớp ${item.tenLop}?`
+      : `Bạn có chắc muốn xóa môn "${item.tenMonHoc}" (${item.monHocMa}) khỏi danh mục mở chung của khóa ${item.khoaHoc}? (Tất cả các lớp trong khóa này cũng sẽ được hủy môn)`;
+
+    if (!confirm(msg)) {
       return;
     }
     this.http.delete(`http://localhost:8080/api/mon-hoc-mo/${item.id}`).subscribe({
       next: () => {
         this.monHocMoList = this.monHocMoList.filter((m) => m.id !== item.id);
-        this.successMessage = `Đã xóa môn "${item.tenMonHoc}" khỏi kỳ mở của khóa ${item.khoaHoc}.`;
+        this.successMessage = `Đã xóa môn "${item.tenMonHoc}".`;
         this.cd.detectChanges();
       },
       error: () => {

@@ -10,6 +10,13 @@
     </div>
   </header>
 
+  <div class="tip-banner">
+    <span class="tip-icon">💡</span>
+    <span>
+      Hệ thống tự động sinh: Mã giảng viên dạng <strong>GV + [Mã khoa] + 001 tăng dần</strong> (VD: <code>GVCNTT001</code>) và Email dạng <strong>[tên][họ đệm].[Mã GV]&#64;stu.edu.vn</strong> (VD: <code>duedm.GVCNTT001&#64;stu.edu.vn</code>) khi thêm mới. Mật khẩu đăng nhập mặc định: <code>gv123456</code>.
+    </span>
+  </div>
+
   @if (successMessage) {
     <div class="alert alert-success">{{ successMessage }}</div>
   }
@@ -27,16 +34,21 @@
 
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
-          <label>Mã giảng viên <span class="req">*</span></label>
-          <input type="text" formControlName="maGiangVien" placeholder="VD: GV001, GV102" />
-          @if (form.get('maGiangVien')?.touched && form.get('maGiangVien')?.invalid) {
-            <small class="error-text">Mã giảng viên là bắt buộc.</small>
+          <label>Khoa trực thuộc <span class="req">*</span></label>
+          <select formControlName="khoaId">
+            <option value="">-- Chọn Khoa --</option>
+            @for (k of khoas; track k.id) {
+              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
+            }
+          </select>
+          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+            <small class="error-text">Vui lòng chọn Khoa công tác.</small>
           }
         </div>
 
         <div class="form-group">
           <label>Họ và tên <span class="req">*</span></label>
-          <input type="text" formControlName="hoTen" placeholder="VD: TS. Nguyễn Văn An" />
+          <input type="text" formControlName="hoTen" placeholder="VD: Đỗ Minh Duệ" />
           @if (form.get('hoTen')?.touched && form.get('hoTen')?.invalid) {
             <small class="error-text">Họ tên là bắt buộc.</small>
           }
@@ -56,27 +68,6 @@
             <label>Số điện thoại</label>
             <input type="text" formControlName="soDienThoai" placeholder="0901234567" />
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>Email liên hệ <span class="req">*</span></label>
-          <input type="email" formControlName="email" placeholder="gv.an@university.edu.vn" />
-          @if (form.get('email')?.touched && form.get('email')?.invalid) {
-            <small class="error-text">Email không hợp lệ hoặc để trống.</small>
-          }
-        </div>
-
-        <div class="form-group">
-          <label>Khoa trực thuộc <span class="req">*</span></label>
-          <select formControlName="khoaId">
-            <option value="">-- Chọn Khoa --</option>
-            @for (k of khoas; track k.id) {
-              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
-            }
-          </select>
-          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
-            <small class="error-text">Vui lòng chọn Khoa công tác.</small>
-          }
         </div>
 
         <div class="form-group">
@@ -165,7 +156,7 @@
                     <strong>{{ gv.hoTen }}</strong>
                   </td>
                   <td>
-                    <span class="degree-badge">{{ gv.hocVi || 'Giảng viên' }}</span>
+                    {{ gv.hocVi || 'Giảng viên' }}
                   </td>
                   <td>{{ gv.khoaTen || '-' }}</td>
                   <td>

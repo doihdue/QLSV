@@ -47,6 +47,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/admin/diem-dangky/admin-diem-dangky.component').then((m) => m.AdminDiemDangKyComponent),
       },
+      {
+        path: 'thong-ke/gpa',
+        loadComponent: () =>
+          import('./pages/admin/thong-ke-gpa/thong-ke-gpa.component').then((m) => m.ThongKeGpaComponent),
+      },
       // Cổng Thông tin Sinh viên (Student Portal)
       {
         path: 'sinh-vien/ho-so-ca-nhan',

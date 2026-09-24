@@ -93,12 +93,57 @@ public class GiangVienService {
                 .orElseThrow(() -> new ResourceNotFoundException("GiangVien not found with id " + id));
     }
 
+    public String generateNextMaGiangVien(Long khoaId) {
+        Khoa khoa = khoaRepository.findById(khoaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Khoa not found with id " + khoaId));
+        String maKhoa = (khoa.getMaKhoa() != null) ? khoa.getMaKhoa().trim().toUpperCase() : "";
+        String prefix = "GV" + maKhoa;
+
+        List<GiangVien> existing = giangVienRepository.findByMaGiangVienStartingWith(prefix);
+        int maxSeq = 0;
+        for (GiangVien gv : existing) {
+            String code = gv.getMaGiangVien();
+            if (code != null && code.startsWith(prefix)) {
+                String suffix = code.substring(prefix.length());
+                try {
+                    int seq = Integer.parseInt(suffix);
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        int nextSeq = maxSeq + 1;
+        return prefix + String.format("%03d", nextSeq);
+    }
+
     private void apply(GiangVienRequest request, GiangVien giangVien) {
         Khoa khoa = khoaRepository.findById(request.khoaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Khoa not found with id " + request.khoaId()));
-        giangVien.setMaGiangVien(request.maGiangVien());
         giangVien.setHoTen(request.hoTen());
-        giangVien.setEmail(request.email());
+
+        String maGv = request.maGiangVien();
+        if (maGv == null || maGv.isBlank()) {
+            if (giangVien.getMaGiangVien() == null || giangVien.getMaGiangVien().isBlank()) {
+                maGv = generateNextMaGiangVien(request.khoaId());
+            } else {
+                maGv = giangVien.getMaGiangVien();
+            }
+        }
+        giangVien.setMaGiangVien(maGv.trim());
+
+        String email = request.email();
+        if (email == null || email.isBlank()) {
+            if (giangVien.getEmail() == null || giangVien.getEmail().isBlank()) {
+                email = SinhVienService.generateEmailFromNameAndMssv(request.hoTen(), giangVien.getMaGiangVien());
+            } else {
+                email = giangVien.getEmail();
+            }
+        }
+        giangVien.setEmail(email.trim());
+
         giangVien.setSoDienThoai(request.soDienThoai());
         giangVien.setHocVi(request.hocVi());
         giangVien.setChuyenMon(request.chuyenMon());

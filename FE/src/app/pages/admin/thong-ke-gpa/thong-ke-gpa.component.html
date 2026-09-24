@@ -1,0 +1,275 @@
+<section class="thong-ke-page">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-info">
+      <h1>Báo Cáo & Thống Kê Học Lực</h1>
+      <p>Thống kê điểm trung bình GPA toàn diện và phân loại học lực sinh viên theo dữ liệu thực tế.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-action" (click)="exportCsv()" [disabled]="data.length === 0"
+        title="Xuất danh sách ra file CSV">
+        <span>Xuất CSV</span>
+      </button>
+      <button type="button" class="btn-action" (click)="printPage()" title="In danh sách thống kê">
+        <span>In</span>
+      </button>
+      <button type="button" class="btn-action btn-primary" (click)="loadStats()" [disabled]="loading"
+        title="Tải lại dữ liệu">
+        <span>{{ loading ? 'Đang tải...' : 'Làm mới' }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Error Alert -->
+  @if (errorMessage) {
+  <div class="alert alert-danger">
+    <span>⚠️ {{ errorMessage }}</span>
+    <button type="button" class="btn-retry" (click)="loadStats()">Thử lại</button>
+  </div>
+  }
+
+  <!-- KPI Cards (Simple & Professional) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-meta">
+        <span class="kpi-label">Tổng sinh viên</span>
+        <strong class="kpi-value">{{ totalStudents }}</strong>
+        <span class="kpi-sub">
+          Đã có điểm: <strong>{{ gradedStudentsCount }}</strong> sinh viên
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-meta">
+        <span class="kpi-label">Điểm trung bình (GPA)</span>
+        <strong class="kpi-value">{{ averageGpa }} <span class="max-scale">/ 10</span></strong>
+        <span class="kpi-sub">
+          Toàn bộ học phần đã duyệt
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-meta">
+        <span class="kpi-label">GPA cao nhất</span>
+        @if (topStudent) {
+        <strong class="kpi-value top-student-name">{{ topStudent.hoTen }}</strong>
+        <span class="kpi-sub">
+          MSSV: {{ topStudent.mssv }} • GPA: <strong>{{ topStudent.diemTrungBinh }}</strong>
+        </span>
+        } @else {
+        <strong class="kpi-value not-available">Chưa có dữ liệu</strong>
+        <span class="kpi-sub">Cần có ít nhất 1 sinh viên có điểm</span>
+        }
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-meta">
+        <span class="kpi-label">Tỷ lệ Đạt chuẩn (>= 5.0)</span>
+        <strong class="kpi-value">{{ passRate }}%</strong>
+        <span class="kpi-sub">
+          Trên tổng {{ gradedStudentsCount }} SV có điểm
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phân bố học lực (Simple, Professional Legend & Filter) -->
+  <div class="distribution-card">
+    <div class="dist-header">
+      <div class="dist-title">
+        <h3>Phân loại học lực</h3>
+        <span>Bấm vào loại để lọc nhanh danh sách</span>
+      </div>
+      <div class="dist-total">
+        <span>Hiển thị: <strong>{{ filteredData.length }}</strong> / {{ totalStudents }} sinh viên</span>
+      </div>
+    </div>
+
+    <!-- Segmented Track -->
+    <div class="dist-bar-track">
+      <div class="bar-segment seg-xuat-sac" [style.width.%]="getPercent(countXuatSac)"
+        [title]="'Xuất sắc: ' + countXuatSac"></div>
+      <div class="bar-segment seg-kha-gioi" [style.width.%]="getPercent(countKhaGioi)"
+        [title]="'Khá / Giỏi: ' + countKhaGioi"></div>
+      <div class="bar-segment seg-trung-binh" [style.width.%]="getPercent(countTrungBinh)"
+        [title]="'Trung bình: ' + countTrungBinh"></div>
+      <div class="bar-segment seg-yeu" [style.width.%]="getPercent(countYeu)"
+        [title]="'Yếu: ' + countYeu"></div>
+      <div class="bar-segment seg-chua-diem" [style.width.%]="getPercent(countChuaDiem)"
+        [title]="'Chưa có điểm: ' + countChuaDiem"></div>
+    </div>
+
+    <!-- Interactive Filter Legend Pills -->
+    <div class="dist-legend">
+      <button type="button" class="legend-pill" [class.active]="selectedXepLoai === ''" (click)="filterByRank('')">
+        <span>Tất cả ({{ totalStudents }})</span>
+      </button>
+
+      <button type="button" class="legend-pill" [class.active]="selectedXepLoai === 'Xuất sắc'"
+        (click)="filterByRank('Xuất sắc')">
+        <span>Xuất sắc: <strong>{{ countXuatSac }}</strong> ({{ getPercent(countXuatSac) }}%)</span>
+      </button>
+
+      <button type="button" class="legend-pill" [class.active]="selectedXepLoai === 'Khá / Giỏi'"
+        (click)="filterByRank('Khá / Giỏi')">
+        <span>Khá / Giỏi: <strong>{{ countKhaGioi }}</strong> ({{ getPercent(countKhaGioi) }}%)</span>
+      </button>
+
+      <button type="button" class="legend-pill" [class.active]="selectedXepLoai === 'Trung bình'"
+        (click)="filterByRank('Trung bình')">
+        <span>Trung bình: <strong>{{ countTrungBinh }}</strong> ({{ getPercent(countTrungBinh) }}%)</span>
+      </button>
+
+      <button type="button" class="legend-pill" [class.active]="selectedXepLoai === 'Yếu / Cảnh báo'"
+        (click)="filterByRank('Yếu / Cảnh báo')">
+        <span>Yếu / Cảnh báo: <strong>{{ countYeu }}</strong> ({{ getPercent(countYeu) }}%)</span>
+      </button>
+
+      <button type="button" class="legend-pill" [class.active]="selectedXepLoai === 'Chưa có điểm'"
+        (click)="filterByRank('Chưa có điểm')">
+        <span>Chưa có điểm: <strong>{{ countChuaDiem }}</strong> ({{ getPercent(countChuaDiem) }}%)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toolbar & Filters -->
+  <div class="table-card">
+    <div class="table-toolbar">
+      <div class="filters-row">
+        <!-- Search box -->
+        <div class="search-input-wrap">
+          <input type="text" [(ngModel)]="searchText" placeholder="Tìm kiếm theo MSSV, họ tên, lớp..." />
+          @if (searchText) {
+          <button type="button" class="clear-search-btn" (click)="searchText = ''">✕</button>
+          }
+        </div>
+
+        <!-- Class Filter -->
+        <div class="filter-select-wrap">
+          <label>Lớp học:</label>
+          <select [(ngModel)]="selectedLopId" (change)="onLopChange()">
+            <option value="">Tất cả Lớp hành chính</option>
+            @for (l of lops; track l.id) {
+            <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
+            }
+          </select>
+        </div>
+
+        <!-- Grade Classification Filter -->
+        <div class="filter-select-wrap">
+          <label>Xếp loại:</label>
+          <select [(ngModel)]="selectedXepLoai">
+            <option value="">Tất cả Xếp loại</option>
+            <option value="Xuất sắc">Xuất sắc (>= 8.5)</option>
+            <option value="Khá / Giỏi">Khá / Giỏi (7.0 - 8.49)</option>
+            <option value="Trung bình">Trung bình (5.0 - 6.99)</option>
+            <option value="Yếu / Cảnh báo">Yếu / Cảnh báo (< 5.0)</option>
+            <option value="Chưa có điểm">Chưa có điểm</option>
+          </select>
+        </div>
+
+        <!-- Sort selector -->
+        <div class="filter-select-wrap">
+          <label>Sắp xếp:</label>
+          <select [(ngModel)]="sortBy">
+            <option value="gpa_desc">GPA cao nhất ↓</option>
+            <option value="gpa_asc">GPA thấp nhất ↑</option>
+            <option value="credits_desc">Tín chỉ tích lũy ↓</option>
+            <option value="name_asc">Họ tên A → Z</option>
+            <option value="mssv_asc">MSSV tăng dần</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    @if (loading) {
+    <div class="empty-state">
+      <p>Đang tải dữ liệu thống kê...</p>
+    </div>
+    } @else if (filteredData.length === 0) {
+    <div class="empty-state">
+      <h3>Không tìm thấy dữ liệu phù hợp</h3>
+      <p>Không có kết quả nào thỏa mãn bộ lọc hiện tại.</p>
+      <button type="button" class="btn-reset-filter"
+        (click)="selectedLopId = ''; selectedXepLoai = ''; searchText = ''; onLopChange()">
+        Xóa bộ lọc
+      </button>
+    </div>
+    } @else {
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 60px;">STT</th>
+            <th style="width: 140px;">MSSV</th>
+            <th>Họ và tên</th>
+            <th>Lớp hành chính</th>
+            <th>Khoa</th>
+            <th class="text-center" style="width: 90px;">Số môn</th>
+            <th class="text-center" style="width: 110px;">Tín chỉ tích lũy</th>
+            <th class="text-center" style="width: 130px;">Điểm GPA</th>
+            <th class="text-center" style="width: 140px;">Xếp loại học lực</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (sv of filteredData; track sv.sinhVienId; let i = $index) {
+          <tr>
+            <!-- STT -->
+            <td class="text-center text-muted">
+              {{ i + 1 }}
+            </td>
+
+            <!-- MSSV -->
+            <td>
+              <span class="code-badge">{{ sv.mssv }}</span>
+            </td>
+
+            <!-- Full Name -->
+            <td>
+              <strong>{{ sv.hoTen }}</strong>
+            </td>
+
+            <!-- Class -->
+            <td>
+              {{ sv.tenLop }}
+            </td>
+
+            <!-- Faculty -->
+            <td>
+              {{ sv.tenKhoa }}
+            </td>
+
+            <!-- Completed Courses -->
+            <td class="text-center">
+              {{ sv.soMonHoc }}
+            </td>
+
+            <!-- Cumulative Credits -->
+            <td class="text-center">
+              {{ sv.tinChiTichLuy }}
+            </td>
+
+            <!-- GPA -->
+            <td class="text-center">
+              <strong class="gpa-text">{{ (sv.diemTrungBinh | number: '1.2-2') }}</strong>
+            </td>
+
+            <!-- Rank Category Badge -->
+            <td class="text-center">
+              <span class="rank-tag" [ngClass]="getRankClass(sv.xepLoaiHocLuc)">
+                {{ sv.xepLoaiHocLuc }}
+              </span>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </div>
+</section>

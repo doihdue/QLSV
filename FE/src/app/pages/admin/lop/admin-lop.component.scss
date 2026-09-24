@@ -52,6 +52,22 @@
   }
 }
 
+.tip-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+
+  .tip-icon {
+    font-size: 1.2rem;
+  }
+}
+
 .alert {
   padding: 12px 18px;
   border-radius: 12px;
@@ -113,6 +129,54 @@
 
 .form-group {
   margin-bottom: 16px;
+
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+
+    label {
+      margin-bottom: 0;
+    }
+  }
+
+  .btn-helper-action {
+    background: #eef2ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #4f46e5;
+      color: white;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .helper-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: #64748b;
+
+    code {
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #0f172a;
+      font-weight: 600;
+    }
+  }
 
   label {
     display: block;

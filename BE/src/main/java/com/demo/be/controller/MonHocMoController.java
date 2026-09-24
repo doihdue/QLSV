@@ -38,6 +38,15 @@ public class MonHocMoController {
         return ResponseEntity.ok(monHocMoService.findByFilters(hocKy, namHoc, khoaId, khoaHoc, lopId));
     }
 
+    @GetMapping("/lop/{lopId}")
+    public ResponseEntity<List<MonHocMoResponse>> getForLop(
+            @PathVariable Long lopId,
+            @RequestParam(required = false) String hocKy,
+            @RequestParam(required = false) String namHoc
+    ) {
+        return ResponseEntity.ok(monHocMoService.findForLop(lopId, hocKy, namHoc));
+    }
+
     @PostMapping
     public ResponseEntity<MonHocMoResponse> create(@Valid @RequestBody MonHocMoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(monHocMoService.create(request));

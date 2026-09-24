@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record LopRequest(
-        @NotBlank(message = "Ma lop is required") @Size(max = 20, message = "Ma lop must be at most 20 characters") String maLop,
+        @Size(max = 20, message = "Ma lop must be at most 20 characters") String maLop,
         @NotBlank(message = "Ten lop is required") @Size(max = 150, message = "Ten lop must be at most 150 characters") String tenLop,
         @NotBlank(message = "Nien khoa is required") @Size(max = 20, message = "Nien khoa must be at most 20 characters") String nienKhoa,
         @NotNull(message = "Si so toi da is required") @Positive(message = "Si so toi da must be positive") Integer siSoToiDa,

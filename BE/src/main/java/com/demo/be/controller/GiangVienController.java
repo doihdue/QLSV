@@ -36,6 +36,14 @@ public class GiangVienController {
         return ResponseEntity.ok(giangVienService.findById(id));
     }
 
+    @GetMapping("/generate-ma")
+    public ResponseEntity<java.util.Map<String, String>> generateMaGiangVien(
+            @org.springframework.web.bind.annotation.RequestParam Long khoaId
+    ) {
+        String ma = giangVienService.generateNextMaGiangVien(khoaId);
+        return ResponseEntity.ok(java.util.Map.of("maGiangVien", ma));
+    }
+
     @PostMapping
     public ResponseEntity<GiangVienResponse> create(@Valid @RequestBody GiangVienRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(giangVienService.create(request));

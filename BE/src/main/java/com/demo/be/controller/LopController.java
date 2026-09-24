@@ -36,6 +36,15 @@ public class LopController {
         return ResponseEntity.ok(lopService.findById(id));
     }
 
+    @GetMapping("/generate-ma-lop")
+    public ResponseEntity<java.util.Map<String, String>> generateMaLop(
+            @org.springframework.web.bind.annotation.RequestParam Long khoaId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String nienKhoa
+    ) {
+        String maLop = lopService.generateNextMaLop(khoaId, nienKhoa);
+        return ResponseEntity.ok(java.util.Map.of("maLop", maLop));
+    }
+
     @PostMapping
     public ResponseEntity<LopResponse> create(@Valid @RequestBody LopRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(lopService.create(request));

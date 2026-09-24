@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 public interface SinhVienRepository extends JpaRepository<SinhVien, Long> {
     Optional<SinhVien> findByMssv(String mssv);
     List<SinhVien> findByLop_Id(Long lopId);
+    List<SinhVien> findByMssvStartingWith(String prefix);
 
     /**
      * API Native Query: Thống kê kết quả học tập & xếp hạng GPA sinh viên
@@ -28,6 +29,7 @@ public interface SinhVienRepository extends JpaRepository<SinhVien, Long> {
                 COALESCE(SUM(CASE WHEN qd.dat = 1 THEN mh.so_tin_chi ELSE 0 END), 0) AS tinChiTichLuy,
                 ROUND(COALESCE(SUM(qd.diem_tong_ket * mh.so_tin_chi) / NULLIF(SUM(CASE WHEN qd.diem_tong_ket IS NOT NULL THEN mh.so_tin_chi ELSE 0 END), 0), 0), 2) AS diemTrungBinh,
                 CASE 
+                    WHEN COUNT(qd.id) = 0 THEN N'Chưa có điểm'
                     WHEN ROUND(COALESCE(SUM(qd.diem_tong_ket * mh.so_tin_chi) / NULLIF(SUM(CASE WHEN qd.diem_tong_ket IS NOT NULL THEN mh.so_tin_chi ELSE 0 END), 0), 0), 2) >= 8.5 THEN N'Xuất sắc'
                     WHEN ROUND(COALESCE(SUM(qd.diem_tong_ket * mh.so_tin_chi) / NULLIF(SUM(CASE WHEN qd.diem_tong_ket IS NOT NULL THEN mh.so_tin_chi ELSE 0 END), 0), 0), 2) >= 7.0 THEN N'Khá / Giỏi'
                     WHEN ROUND(COALESCE(SUM(qd.diem_tong_ket * mh.so_tin_chi) / NULLIF(SUM(CASE WHEN qd.diem_tong_ket IS NOT NULL THEN mh.so_tin_chi ELSE 0 END), 0), 0), 2) >= 5.0 THEN N'Trung bình'

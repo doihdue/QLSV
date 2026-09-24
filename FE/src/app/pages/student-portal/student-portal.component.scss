@@ -653,6 +653,29 @@
   background-color: #f0fdf4 !important;
 }
 
+.class-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4338ca;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.gv-teacher-name {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: #1e293b;
+  display: inline-block;
+
+  &.unassigned {
+    color: #94a3b8;
+    font-style: italic;
+  }
+}
+
 /* ================== TAB 3: Grades Layout ================== */
 .grades-portal-layout {
   display: flex;

@@ -64,3 +64,63 @@ select {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Global Clean Status Dots (Professional, no bloated pill backgrounds) */
+.status-active,
+.badge-active {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  color: #166534 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #16a34a;
+    flex-shrink: 0;
+  }
+}
+
+.status-inactive,
+.badge-inactive {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  color: #991b1b !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #dc2626;
+    flex-shrink: 0;
+  }
+}
+
+/* Prevent any badge or pill text from breaking onto multiple lines */
+[class*='badge'],
+[class*='pill'],
+[class*='tag'] {
+  white-space: nowrap !important;
+}

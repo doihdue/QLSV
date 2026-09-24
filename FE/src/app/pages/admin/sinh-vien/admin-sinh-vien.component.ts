@@ -53,11 +53,11 @@ export class AdminSinhVienComponent implements OnInit {
   protected successMessage = '';
 
   protected readonly form = this.fb.group({
-    mssv: ['', [Validators.required, Validators.maxLength(20)]],
+    mssv: [''],
     hoTen: ['', [Validators.required, Validators.maxLength(150)]],
     ngaySinh: [''],
     gioiTinh: ['Nam'],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    email: [''],
     soDienThoai: ['', [Validators.maxLength(20)]],
     diaChi: ['', [Validators.maxLength(255)]],
     ngayNhapHoc: ['2023-09-05'],
@@ -119,11 +119,11 @@ export class AdminSinhVienComponent implements OnInit {
 
     const val = this.form.getRawValue();
     const payload = {
-      mssv: val.mssv?.trim(),
+      mssv: this.editingId === null ? undefined : (val.mssv?.trim() || undefined),
       hoTen: val.hoTen?.trim(),
       ngaySinh: val.ngaySinh || null,
       gioiTinh: val.gioiTinh || 'Nam',
-      email: val.email?.trim(),
+      email: this.editingId === null ? undefined : (val.email?.trim() || undefined),
       soDienThoai: val.soDienThoai?.trim() || null,
       diaChi: val.diaChi?.trim() || null,
       ngayNhapHoc: val.ngayNhapHoc || null,
@@ -209,10 +209,13 @@ export class AdminSinhVienComponent implements OnInit {
 
   protected getCohort(sv: SinhVienItem): string {
     if (sv.khoaHoc) {
-      const num = sv.khoaHoc.replace(/\D+/g, '');
-      if (num) return `Khóa ${num}`;
+      return `Khóa ${sv.khoaHoc}`;
     }
-    const match = sv.mssv?.match(/^[A-Za-z]*(\d{2})/);
+    if (sv.ngayNhapHoc) {
+      const year = new Date(sv.ngayNhapHoc).getFullYear();
+      if (!isNaN(year)) return `Khóa ${year}`;
+    }
+    const match = sv.mssv?.match(/^(\d{4})/);
     return match ? `Khóa ${match[1]}` : '';
   }
 

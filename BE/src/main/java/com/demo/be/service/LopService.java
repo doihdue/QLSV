@@ -50,10 +50,54 @@ public class LopService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lop not found with id " + id));
     }
 
+    public String generateNextMaLop(Long khoaId, String nienKhoa) {
+        Khoa khoa = khoaRepository.findById(khoaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Khoa not found with id " + khoaId));
+        String maKhoa = khoa.getMaKhoa() != null ? khoa.getMaKhoa().trim().toUpperCase() : "";
+
+        String year = String.valueOf(java.time.LocalDate.now().getYear());
+        if (nienKhoa != null && !nienKhoa.isBlank()) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d{4}").matcher(nienKhoa);
+            if (m.find()) {
+                year = m.group();
+            }
+        }
+
+        String prefix = "D" + year + maKhoa;
+        List<Lop> existingLops = lopRepository.findByMaLopStartingWith(prefix);
+
+        int maxSeq = 0;
+        for (Lop l : existingLops) {
+            String code = l.getMaLop();
+            if (code != null && code.startsWith(prefix)) {
+                String suffix = code.substring(prefix.length());
+                try {
+                    int seq = Integer.parseInt(suffix);
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        int nextSeq = maxSeq + 1;
+        return prefix + String.format("%02d", nextSeq);
+    }
+
     private void apply(LopRequest request, Lop lop) {
         Khoa khoa = khoaRepository.findById(request.khoaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Khoa not found with id " + request.khoaId()));
-        lop.setMaLop(request.maLop());
+        
+        String maLop = request.maLop();
+        if (maLop == null || maLop.isBlank()) {
+            if (lop.getMaLop() == null || lop.getMaLop().isBlank()) {
+                maLop = generateNextMaLop(request.khoaId(), request.nienKhoa());
+            } else {
+                maLop = lop.getMaLop();
+            }
+        }
+        lop.setMaLop(maLop.trim());
         lop.setTenLop(request.tenLop());
         lop.setNienKhoa(request.nienKhoa());
         lop.setSiSoToiDa(request.siSoToiDa());
