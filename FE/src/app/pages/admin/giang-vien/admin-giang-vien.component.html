@@ -1,0 +1,193 @@
+<section class="admin-page">
+  <header class="page-header">
+    <div class="header-info">
+      <span class="eyebrow">Quản lý đào tạo</span>
+      <h1>Quản lý Cán bộ Giảng viên</h1>
+      <p>Hồ sơ đội ngũ giảng viên, học vị khoa học, chuyên môn đào tạo và đơn vị công tác.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="loadGiangViens()">⟳ Làm mới</button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+  @if (errorMessage) {
+    <div class="alert alert-danger">{{ errorMessage }}</div>
+  }
+
+  <div class="admin-layout">
+    <!-- Form Panel -->
+    <aside class="form-card">
+      <div class="form-header">
+        <h3>{{ editingId === null ? 'Thêm mới giảng viên' : 'Cập nhật giảng viên' }}</h3>
+        <p>{{ editingId === null ? 'Điền hồ sơ cán bộ giảng viên' : 'Chỉnh sửa thông tin giảng viên đã chọn' }}</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-group">
+          <label>Mã giảng viên <span class="req">*</span></label>
+          <input type="text" formControlName="maGiangVien" placeholder="VD: GV001, GV102" />
+          @if (form.get('maGiangVien')?.touched && form.get('maGiangVien')?.invalid) {
+            <small class="error-text">Mã giảng viên là bắt buộc.</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Họ và tên <span class="req">*</span></label>
+          <input type="text" formControlName="hoTen" placeholder="VD: TS. Nguyễn Văn An" />
+          @if (form.get('hoTen')?.touched && form.get('hoTen')?.invalid) {
+            <small class="error-text">Họ tên là bắt buộc.</small>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Học vị <span class="req">*</span></label>
+            <select formControlName="hocVi">
+              @for (hv of hocViOptions; track hv) {
+                <option [value]="hv">{{ hv }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Số điện thoại</label>
+            <input type="text" formControlName="soDienThoai" placeholder="0901234567" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email liên hệ <span class="req">*</span></label>
+          <input type="email" formControlName="email" placeholder="gv.an@university.edu.vn" />
+          @if (form.get('email')?.touched && form.get('email')?.invalid) {
+            <small class="error-text">Email không hợp lệ hoặc để trống.</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Khoa trực thuộc <span class="req">*</span></label>
+          <select formControlName="khoaId">
+            <option value="">-- Chọn Khoa --</option>
+            @for (k of khoas; track k.id) {
+              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
+            }
+          </select>
+          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+            <small class="error-text">Vui lòng chọn Khoa công tác.</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Chuyên môn / Hướng nghiên cứu</label>
+          <input type="text" formControlName="chuyenMon" placeholder="VD: Trí tuệ nhân tạo, Mạng máy tính" />
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="active" />
+            <span>Đang công tác giảng dạy (Hoạt động)</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="primary-button" [disabled]="saving">
+            {{ saving ? 'Đang lưu...' : editingId === null ? 'Thêm mới' : 'Lưu cập nhật' }}
+          </button>
+          @if (editingId !== null) {
+            <button type="button" class="cancel-button" (click)="resetForm()">Hủy sửa</button>
+          }
+        </div>
+      </form>
+    </aside>
+
+    <!-- Table List Panel -->
+    <article class="table-card">
+      <div class="table-toolbar">
+        <div class="filter-group">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              [(ngModel)]="searchText"
+              placeholder="Tìm theo mã GV, họ tên, email, chuyên môn..."
+            />
+          </div>
+
+          <select [(ngModel)]="filterKhoaId" class="filter-select">
+            <option value="">Tất cả các Khoa</option>
+            @for (k of khoas; track k.id) {
+              <option [value]="k.id">{{ k.tenKhoa }}</option>
+            }
+          </select>
+
+          <select [(ngModel)]="filterHocVi" class="filter-select">
+            <option value="">Tất cả học vị</option>
+            @for (hv of hocViOptions; track hv) {
+              <option [value]="hv">{{ hv }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="list-summary">
+          <span>Tổng số: <strong>{{ filteredGiangViens.length }}</strong> giảng viên</span>
+        </div>
+      </div>
+
+      @if (loading) {
+        <div class="empty-state">Đang tải danh sách giảng viên...</div>
+      } @else if (filteredGiangViens.length === 0) {
+        <div class="empty-state">Không tìm thấy giảng viên nào phù hợp.</div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã GV</th>
+                <th>Họ và tên</th>
+                <th>Học vị</th>
+                <th>Khoa</th>
+                <th>Email</th>
+                <th>Số điện thoại</th>
+                <th>Chuyên môn</th>
+                <th>Trạng thái</th>
+                <th class="text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (gv of filteredGiangViens; track gv.id) {
+                <tr>
+                  <td>
+                    <span class="code-badge">{{ gv.maGiangVien }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ gv.hoTen }}</strong>
+                  </td>
+                  <td>
+                    <span class="degree-badge">{{ gv.hocVi || 'Giảng viên' }}</span>
+                  </td>
+                  <td>{{ gv.khoaTen || '-' }}</td>
+                  <td>
+                    <a [href]="'mailto:' + gv.email" class="email-link">{{ gv.email }}</a>
+                  </td>
+                  <td>{{ gv.soDienThoai || '-' }}</td>
+                  <td>{{ gv.chuyenMon || '-' }}</td>
+                  <td>
+                    <span [class]="gv.active ? 'badge-active' : 'badge-inactive'">
+                      {{ gv.active ? 'Đang dạy' : 'Nghỉ' }}
+                    </span>
+                  </td>
+                  <td class="text-right actions-cell">
+                    <button type="button" class="btn-edit" (click)="edit(gv)">Sửa</button>
+                    <button type="button" class="btn-delete" (click)="remove(gv)">Xóa</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+  </div>
+</section>

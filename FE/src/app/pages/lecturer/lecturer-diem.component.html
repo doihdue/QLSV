@@ -1,0 +1,213 @@
+<section class="lecturer-page">
+  <header class="page-header">
+    <div class="header-info">
+      <span class="eyebrow">Cổng thông tin Giảng viên</span>
+      <h1>Lớp học phần & Nhập điểm học tập</h1>
+      <p>Quản lý danh sách các lớp môn học được phân công giảng dạy, vào điểm học phần và gửi duyệt bảng điểm.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="loadMyClasses()">⟳ Làm mới danh sách</button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+  @if (errorMessage) {
+    <div class="alert alert-danger">{{ errorMessage }}</div>
+  }
+
+  <!-- Selection of Assigned Class-Subjects -->
+  <div class="class-selector-card">
+    <div class="selector-header">
+      <h3>📚 Danh sách lớp học phần được phân công ({{ classes.length }})</h3>
+      <p class="selector-hint">Chọn môn học và lớp để tiến hành vào điểm cho sinh viên</p>
+    </div>
+
+    @if (loadingClasses) {
+      <div class="empty-state">Đang tải danh sách lớp môn học...</div>
+    } @else if (classes.length === 0) {
+      <div class="empty-state">Hiện tại bạn chưa được phân công phụ trách lớp môn học nào trong kỳ này.</div>
+    } @else {
+      <div class="class-grid">
+        @for (cls of classes; track cls.id) {
+          <div
+            class="class-pill-card"
+            [class.active]="selectedClass?.id === cls.id"
+            (click)="selectClass(cls)"
+          >
+            <div class="pill-top">
+              <span class="sub-code">{{ cls.monHocMa }}</span>
+              <span class="badge-credits">{{ cls.soTinChi }} tín chỉ</span>
+            </div>
+            <strong class="sub-name">{{ cls.tenMonHoc }}</strong>
+            <div class="pill-footer">
+              <span class="class-name">🏫 Lớp: <strong>{{ cls.tenLop || cls.maLop || 'Tất cả' }}</strong></span>
+              <span class="term-info">HK{{ cls.hocKy }} ({{ cls.namHoc }})</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Grade Entry Section -->
+  @if (selectedClass) {
+    <div class="grade-sheet-card">
+      <div class="sheet-header">
+        <div>
+          <h2>Bảng điểm: {{ selectedClass.tenMonHoc }} ({{ selectedClass.monHocMa }})</h2>
+          <p class="meta-desc">
+            Lớp: <strong>{{ selectedClass.tenLop || selectedClass.maLop || 'Tất cả sinh viên' }}</strong> |
+            Học kỳ: <strong>{{ selectedClass.hocKy }}</strong> ({{ selectedClass.namHoc }}) |
+            Sĩ số đăng ký: <strong>{{ students.length }} sinh viên</strong>
+          </p>
+        </div>
+
+        <div class="sheet-status-box">
+          @if (overallStatus === 'CHO_DUYET') {
+            <span class="status-badge badge-pending">⏳ Đang chờ Admin duyệt</span>
+          } @else if (overallStatus === 'DA_DUYET') {
+            <span class="status-badge badge-approved">✓ Đã duyệt & Công bố</span>
+          } @else if (overallStatus === 'TU_CHOI') {
+            <span class="status-badge badge-rejected">✕ Bị từ chối - Cần sửa</span>
+          } @else {
+            <span class="status-badge badge-draft">✏ Bản nháp (Chưa gửi)</span>
+          }
+        </div>
+      </div>
+
+      <!-- Warning if rejected -->
+      @if (overallStatus === 'TU_CHOI' && rejectReason) {
+        <div class="alert alert-warning">
+          <strong>Lý do từ chối từ Quản trị viên:</strong> {{ rejectReason }}
+          <br /><small>Vui lòng cập nhật lại điểm theo yêu cầu và bấm "Gửi Admin duyệt lại".</small>
+        </div>
+      }
+
+      @if (overallStatus === 'CHO_DUYET') {
+        <div class="tip-banner">
+          <span>ℹ Bảng điểm này đã được gửi lên Ban Quản lý / Admin để kiểm tra và phê duyệt. Các ô nhập điểm đang được tạm khóa.</span>
+        </div>
+      }
+
+      @if (overallStatus === 'DA_DUYET') {
+        <div class="tip-banner success-banner">
+          <span>✓ Bảng điểm đã được phê duyệt chính thức. Sinh viên của lớp hiện đã có thể tra cứu điểm trên Cổng Sinh viên.</span>
+        </div>
+      }
+
+      @if (loadingStudents) {
+        <div class="empty-state">Đang tải danh sách sinh viên...</div>
+      } @else if (students.length === 0) {
+        <div class="empty-state">Chưa có sinh viên nào của lớp này đăng ký học phần môn học này.</div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th>MSSV</th>
+                <th>Họ và tên</th>
+                <th>Lớp</th>
+                <th style="width: 130px;">Chuyên cần (10%)</th>
+                <th style="width: 130px;">Giữa kỳ (30%)</th>
+                <th style="width: 130px;">Cuối kỳ (60%)</th>
+                <th style="width: 110px;">Tổng kết</th>
+                <th style="width: 120px;">Xếp loại</th>
+                <th style="width: 100px;">Kết quả</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of students; track item.dangKyMonHocId; let idx = $index) {
+                <tr>
+                  <td class="text-center">{{ idx + 1 }}</td>
+                  <td>
+                    <span class="code-badge">{{ item.sinhVienMssv }}</span>
+                  </td>
+                  <td><strong>{{ item.sinhVienHoTen }}</strong></td>
+                  <td>{{ item.tenLop }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      class="score-input"
+                      [(ngModel)]="item.diemChuyenCan"
+                      [disabled]="isLocked"
+                      (ngModelChange)="onScoreChange(item)"
+                      placeholder="0.0"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      class="score-input"
+                      [(ngModel)]="item.diemGiuaKy"
+                      [disabled]="isLocked"
+                      (ngModelChange)="onScoreChange(item)"
+                      placeholder="0.0"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="10"
+                      class="score-input"
+                      [(ngModel)]="item.diemCuoiKy"
+                      [disabled]="isLocked"
+                      (ngModelChange)="onScoreChange(item)"
+                      placeholder="0.0"
+                    />
+                  </td>
+                  <td class="text-center font-bold">
+                    {{ item.diemTongKet !== null ? item.diemTongKet : '-' }}
+                  </td>
+                  <td class="text-center">
+                    <span class="rank-tag">{{ item.xepLoai || '-' }}</span>
+                  </td>
+                  <td class="text-center">
+                    @if (item.diemTongKet !== null) {
+                      <span [class]="item.dat ? 'badge-pass' : 'badge-fail'">
+                        {{ item.dat ? 'Đạt' : 'Trượt' }}
+                      </span>
+                    } @else {
+                      <span>-</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (!isLocked) {
+          <div class="sheet-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="save(false)"
+              [disabled]="saving"
+            >
+              💾 {{ saving ? 'Đang lưu...' : 'Lưu nháp' }}
+            </button>
+            <button
+              type="button"
+              class="primary-button"
+              (click)="save(true)"
+              [disabled]="saving"
+            >
+              🚀 {{ saving ? 'Đang xử lý...' : 'Gửi Admin duyệt bảng điểm' }}
+            </button>
+          </div>
+        }
+      }
+    </div>
+  }
+</section>

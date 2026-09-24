@@ -1,0 +1,188 @@
+<section class="admin-page">
+  <header class="page-header">
+    <div class="header-info">
+      <span class="eyebrow">Quản lý đào tạo</span>
+      <h1>Quản lý Môn học & Học phần</h1>
+      <p>Danh mục môn học, số tín chỉ đào tạo, thời lượng lý thuyết/thực hành và điều kiện tiên quyết.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="loadMonHocs()">⟳ Làm mới</button>
+    </div>
+  </header>
+
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+  @if (errorMessage) {
+    <div class="alert alert-danger">{{ errorMessage }}</div>
+  }
+
+  <div class="admin-layout">
+    <!-- Form Panel -->
+    <aside class="form-card">
+      <div class="form-header">
+        <h3>{{ editingId === null ? 'Thêm mới môn học' : 'Cập nhật môn học' }}</h3>
+        <p>{{ editingId === null ? 'Khai báo học phần giảng dạy mới' : 'Chỉnh sửa thông tin môn học đã chọn' }}</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-group">
+          <label>Mã môn học <span class="req">*</span></label>
+          <input type="text" formControlName="maMonHoc" placeholder="VD: CS101, MATH201" />
+          @if (form.get('maMonHoc')?.touched && form.get('maMonHoc')?.invalid) {
+            <small class="error-text">Mã môn học là bắt buộc (tối đa 20 ký tự).</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Tên môn học <span class="req">*</span></label>
+          <input type="text" formControlName="tenMonHoc" placeholder="VD: Lập trình Hướng đối tượng" />
+          @if (form.get('tenMonHoc')?.touched && form.get('tenMonHoc')?.invalid) {
+            <small class="error-text">Tên môn học là bắt buộc.</small>
+          }
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Số TC <span class="req">*</span></label>
+            <input type="number" formControlName="soTinChi" min="1" max="10" />
+          </div>
+
+          <div class="form-group">
+            <label>Tiết LT <span class="req">*</span></label>
+            <input type="number" formControlName="soTietLyThuyet" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Tiết TH <span class="req">*</span></label>
+            <input type="number" formControlName="soTietThucHanh" min="0" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Khoa phụ trách <span class="req">*</span></label>
+          <select formControlName="khoaId">
+            <option value="">-- Chọn Khoa phụ trách --</option>
+            @for (k of khoas; track k.id) {
+              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
+            }
+          </select>
+          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+            <small class="error-text">Vui lòng chọn Khoa phụ trách.</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Môn học tiên quyết (nếu có)</label>
+          <input type="text" formControlName="monHocTienQuyet" placeholder="VD: Nhập môn lập trình (CS100)" />
+        </div>
+
+        <div class="form-group">
+          <label>Mô tả tóm tắt</label>
+          <textarea formControlName="moTa" rows="2" placeholder="Mô tả nội dung học phần, chuẩn đầu ra..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="active" />
+            <span>Mở đăng ký giảng dạy (Hoạt động)</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="primary-button" [disabled]="saving">
+            {{ saving ? 'Đang lưu...' : editingId === null ? 'Thêm mới' : 'Lưu cập nhật' }}
+          </button>
+          @if (editingId !== null) {
+            <button type="button" class="cancel-button" (click)="resetForm()">Hủy sửa</button>
+          }
+        </div>
+      </form>
+    </aside>
+
+    <!-- Table List Panel -->
+    <article class="table-card">
+      <div class="table-toolbar">
+        <div class="filter-group">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              [(ngModel)]="searchText"
+              placeholder="Tìm theo mã môn, tên môn, tiên quyết..."
+            />
+          </div>
+
+          <select [(ngModel)]="filterKhoaId" class="filter-select">
+            <option value="">Tất cả các Khoa</option>
+            @for (k of khoas; track k.id) {
+              <option [value]="k.id">{{ k.tenKhoa }}</option>
+            }
+          </select>
+
+          <select [(ngModel)]="filterCredits" class="filter-select">
+            <option value="">Tất cả tín chỉ</option>
+            <option value="1">1 Tín chỉ</option>
+            <option value="2">2 Tín chỉ</option>
+            <option value="3">3 Tín chỉ</option>
+            <option value="4">4 Tín chỉ</option>
+          </select>
+        </div>
+
+        <div class="list-summary">
+          <span>Tổng số: <strong>{{ filteredMonHocs.length }}</strong> môn học</span>
+        </div>
+      </div>
+
+      @if (loading) {
+        <div class="empty-state">Đang tải danh mục môn học...</div>
+      } @else if (filteredMonHocs.length === 0) {
+        <div class="empty-state">Không tìm thấy môn học nào phù hợp.</div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã môn</th>
+                <th>Tên môn học</th>
+                <th>Số TC</th>
+                <th>LT / TH</th>
+                <th>Khoa phụ trách</th>
+                <th>Môn tiên quyết</th>
+                <th>Trạng thái</th>
+                <th class="text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (mon of filteredMonHocs; track mon.id) {
+                <tr>
+                  <td>
+                    <span class="code-badge">{{ mon.maMonHoc }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ mon.tenMonHoc }}</strong>
+                  </td>
+                  <td>
+                    <span class="credit-pill">{{ mon.soTinChi }} TC</span>
+                  </td>
+                  <td>{{ mon.soTietLyThuyet }}LT / {{ mon.soTietThucHanh }}TH</td>
+                  <td>{{ mon.khoaTen || '-' }}</td>
+                  <td>{{ mon.monHocTienQuyet || '-' }}</td>
+                  <td>
+                    <span [class]="mon.active ? 'badge-active' : 'badge-inactive'">
+                      {{ mon.active ? 'Mở' : 'Khóa' }}
+                    </span>
+                  </td>
+                  <td class="text-right actions-cell">
+                    <button type="button" class="btn-edit" (click)="edit(mon)">Sửa</button>
+                    <button type="button" class="btn-delete" (click)="remove(mon)">Xóa</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+  </div>
+</section>

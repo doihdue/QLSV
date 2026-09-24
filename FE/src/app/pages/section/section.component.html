@@ -1,0 +1,197 @@
+@if (isStudent) {
+  <section class="section-page">
+    <header class="section-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Cổng thông tin đào tạo sinh viên</p>
+        <h1>Xin chào, {{ currentUserName }}!</h1>
+        <span>Chào mừng bạn đến với hệ thống học vụ & quản lý đào tạo. Bạn có thể nhanh chóng truy cập các phân hệ bên dưới.</span>
+      </div>
+    </header>
+
+    <div class="student-feature-cards">
+      <a routerLink="/sinh-vien/dang-ky-mon-hoc" class="feature-card card-teal">
+        <div class="card-icon">📝</div>
+        <div class="card-text">
+          <h3>Đăng ký môn học</h3>
+          <p>Lựa chọn học phần, theo dõi số tín chỉ đăng ký theo kỳ, hủy môn trong đợt đăng ký tín chỉ.</p>
+          <span class="card-arrow">Vào đăng ký môn →</span>
+        </div>
+      </a>
+
+      <a routerLink="/sinh-vien/bang-diem" class="feature-card card-orange">
+        <div class="card-icon">📊</div>
+        <div class="card-text">
+          <h3>Kết quả học tập</h3>
+          <p>Xem chi tiết điểm thành phần (chuyên cần, giữa kỳ, cuối kỳ), điểm tổng kết, GPA hệ 10 và 4, xếp loại học lực.</p>
+          <span class="card-arrow">Xem bảng điểm →</span>
+        </div>
+      </a>
+
+      <a routerLink="/sinh-vien/ho-so-ca-nhan" class="feature-card card-slate">
+        <div class="card-icon">👤</div>
+        <div class="card-text">
+          <h3>Hồ sơ sinh viên</h3>
+          <p>Xem thông tin học vụ, thẻ sinh viên điện tử, cập nhật số điện thoại, email, địa chỉ và đổi mật khẩu.</p>
+          <span class="card-arrow">Xem hồ sơ →</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="portal-notice-panel">
+      <div class="notice-header">
+        <h3>📢 Thông báo & Hướng dẫn học vụ sinh viên</h3>
+      </div>
+      <div class="notice-list">
+        <div class="notice-item">
+          <span class="notice-tag tag-urgent">Quan trọng</span>
+          <div>
+            <strong>Đợt đăng ký tín chỉ học phần năm học 2026-2027</strong>
+            <p>Hệ thống mở cổng đăng ký trực tuyến cho các học phần mở. Sinh viên chú ý giới hạn tối đa 24 tín chỉ và tối thiểu 12 tín chỉ trong mỗi kỳ học chính.</p>
+          </div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-tag tag-info">Học vụ</span>
+          <div>
+            <strong>Cập nhật thông tin liên hệ sinh viên</strong>
+            <p>Sinh viên vui lòng kiểm tra và cập nhật chính xác số điện thoại và email cá nhân trong mục Hồ sơ để nhận các thông báo từ Nhà trường.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+} @else {
+  <!-- ADMIN DASHBOARD -->
+  <section class="section-page">
+    <header class="section-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Hệ thống Quản lý Đào tạo & Học vụ</p>
+        <h1>Tổng quan Hệ thống Quản trị</h1>
+        <span>Chào mừng Quản trị viên <strong>{{ currentUserName }}</strong>. Dưới đây là dữ liệu thực tế đang vận hành trong cơ sở dữ liệu.</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="secondary-action" (click)="loadAdminStats()">⟳ Làm mới số liệu</button>
+      </div>
+    </header>
+
+    <!-- Real Counts KPI Grid -->
+    <div class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Sinh viên</span>
+          <span class="stat-icon">👨‍🎓</span>
+        </div>
+        <h3>{{ counts.sinhVien }}</h3>
+        <p>Hồ sơ sinh viên đang quản lý</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Giảng viên</span>
+          <span class="stat-icon">👨‍🏫</span>
+        </div>
+        <h3>{{ counts.giangVien }}</h3>
+        <p>Cán bộ giảng dạy các khoa</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Môn học & Học phần</span>
+          <span class="stat-icon">📚</span>
+        </div>
+        <h3>{{ counts.monHoc }}</h3>
+        <p>Học phần mở đào tạo</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Khoa & Viện</span>
+          <span class="stat-icon">🏢</span>
+        </div>
+        <h3>{{ counts.khoa }}</h3>
+        <p>Khoa chuyên môn trực thuộc</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Lớp hành chính</span>
+          <span class="stat-icon">🏫</span>
+        </div>
+        <h3>{{ counts.lop }}</h3>
+        <p>Lớp hành chính theo khóa</p>
+      </article>
+
+      <article class="stat-card stat-accent">
+        <div class="stat-top">
+          <span>Lượt đăng ký môn</span>
+          <span class="stat-icon">📝</span>
+        </div>
+        <h3>{{ counts.dangKy }}</h3>
+        <p>Sinh viên đã đăng ký học phần</p>
+      </article>
+    </div>
+
+    <!-- Quick Access Hub to Admin Modules -->
+    <div class="admin-modules-panel">
+      <div class="panel-header">
+        <h2>Phân hệ Quản lý Đào tạo cơ bản</h2>
+        <p>Truy cập nhanh vào các chức năng thêm, sửa, xóa và đánh giá điểm</p>
+      </div>
+
+      <div class="modules-grid">
+        <a routerLink="/quan-ly/sinh-vien" class="module-card">
+          <div class="module-icon">👨‍🎓</div>
+          <div class="module-info">
+            <h4>Quản lý Sinh viên</h4>
+            <p>Thêm mới, sửa, xóa hồ sơ sinh viên, tự động cấp tài khoản đăng nhập cho sinh viên.</p>
+          </div>
+          <span class="module-link">Vào quản lý →</span>
+        </a>
+
+        <a routerLink="/quan-ly/mon-hoc" class="module-card">
+          <div class="module-icon">📚</div>
+          <div class="module-info">
+            <h4>Quản lý Môn học</h4>
+            <p>Khai báo học phần, cấu hình số tín chỉ, số tiết lý thuyết, thực hành và môn tiên quyết.</p>
+          </div>
+          <span class="module-link">Vào quản lý →</span>
+        </a>
+
+        <a routerLink="/quan-ly/giang-vien" class="module-card">
+          <div class="module-icon">👨‍🏫</div>
+          <div class="module-info">
+            <h4>Quản lý Giảng viên</h4>
+            <p>Hồ sơ giảng viên, học vị (Thạc sĩ, Tiến sĩ, PGS), chuyên môn và phân công khoa.</p>
+          </div>
+          <span class="module-link">Vào quản lý →</span>
+        </a>
+
+        <a routerLink="/dao-tao/quan-ly-diem" class="module-card module-card-highlight">
+          <div class="module-icon">⚖️</div>
+          <div class="module-info">
+            <h4>Phê duyệt Điểm & Đăng ký môn</h4>
+            <p>Phê duyệt bảng điểm học phần do giảng viên gửi lên, quản lý đăng ký tín chỉ và mở môn học.</p>
+          </div>
+          <span class="module-link">Vào phê duyệt điểm →</span>
+        </a>
+
+        <a routerLink="/quan-ly/khoa" class="module-card">
+          <div class="module-icon">🏢</div>
+          <div class="module-info">
+            <h4>Quản lý Khoa</h4>
+            <p>Danh mục khoa đào tạo chuyên môn và đơn vị phụ trách chương trình học.</p>
+          </div>
+          <span class="module-link">Vào quản lý →</span>
+        </a>
+
+        <a routerLink="/quan-ly/lop" class="module-card">
+          <div class="module-icon">🏫</div>
+          <div class="module-info">
+            <h4>Quản lý Lớp hành chính</h4>
+            <p>Tổ chức các lớp hành chính, niên khóa, sĩ số tối đa và phân công cố vấn học tập.</p>
+          </div>
+          <span class="module-link">Vào quản lý →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+}

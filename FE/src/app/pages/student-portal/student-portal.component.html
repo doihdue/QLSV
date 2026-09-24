@@ -1,0 +1,700 @@
+<div class="student-portal-wrapper">
+  <!-- Top Portal Header & Identity Banner -->
+  <header class="portal-identity-banner">
+    <div class="banner-main">
+      <div class="student-avatar-box">
+        <span class="avatar-text">{{ studentInitials }}</span>
+        <span class="status-indicator" title="Tài khoản đang hoạt động"></span>
+      </div>
+      <div class="student-meta">
+        <div class="meta-headline">
+          <span class="badge-role">Cổng Đào Tạo Sinh Viên</span>
+          <h1>{{ profile?.hoTen || 'Sinh viên' }}</h1>
+        </div>
+        <div class="meta-chips">
+          <span class="chip chip-accent">
+            <strong>MSSV:</strong> {{ profile?.mssv || '---' }}
+          </span>
+          <span class="chip">
+            <strong>Lớp:</strong> {{ profile?.lopTen || '---' }}
+          </span>
+          <span class="chip">
+            <strong>Khoa:</strong> {{ profile?.khoaTen || '---' }}
+          </span>
+          <span class="chip chip-success">
+            <strong>Hệ:</strong> Chính quy
+          </span>
+          @if (studentCohort) {
+            <span class="chip" style="background: rgba(13, 148, 136, 0.12); color: #0f766e; border: 1px solid rgba(13, 148, 136, 0.25);">
+              <strong>Khóa:</strong> {{ studentCohort }}
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="banner-actions print-hide">
+      <button type="button" class="btn-secondary" (click)="printPage()" title="In thông tin hoặc lưu PDF">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+          <path d="M6 14h12v8H6z" />
+        </svg>
+        In trang
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="portal-nav-tabs print-hide">
+    @for (tab of navTabs; track tab.key) {
+      <a
+        [routerLink]="tab.path"
+        [class.active]="mode === tab.key"
+        class="portal-nav-tab"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path [attr.d]="tab.icon" />
+        </svg>
+        <span>{{ tab.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <!-- Feedback notifications -->
+  @if (errorMessage) {
+    <div class="portal-alert alert-error">
+      <span class="alert-icon">⚠️</span>
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="alert-dismiss" (click)="errorMessage = ''">×</button>
+    </div>
+  }
+  @if (successMessage) {
+    <div class="portal-alert alert-success">
+      <span class="alert-icon">✅</span>
+      <p>{{ successMessage }}</p>
+      <button type="button" class="alert-dismiss" (click)="successMessage = ''">×</button>
+    </div>
+  }
+
+  <!-- ==================== TAB 1: HỒ SƠ SINH VIÊN ==================== -->
+  @if (mode === 'profile') {
+    <div class="profile-portal-layout">
+      <!-- Digital Student Card -->
+      <aside class="student-digital-card">
+        <div class="card-header-bar">
+          <div class="university-brand">
+            <span class="univ-logo-icon">🏛️</span>
+            <div>
+              <h3>TRƯỜNG ĐẠI HỌC</h3>
+              <p>HỌC VỤ & QUẢN LÝ ĐÀO TẠO</p>
+            </div>
+          </div>
+          <span class="chip-card-status">THẺ SINH VIÊN</span>
+        </div>
+
+        <div class="card-body">
+          <div class="card-photo-box">
+            <div class="photo-placeholder">
+              <span>{{ studentInitials }}</span>
+            </div>
+            <span class="photo-caption">{{ profile?.mssv }}</span>
+          </div>
+
+          <div class="card-student-details">
+            <div class="detail-row">
+              <span class="detail-label">Họ và tên</span>
+              <strong class="detail-value text-highlight">{{ profile?.hoTen }}</strong>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Ngày sinh</span>
+              <span class="detail-value">{{ profile?.ngaySinh || 'Chưa cập nhật' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Giới tính</span>
+              <span class="detail-value">{{ profile?.gioiTinh || 'Chưa cập nhật' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Lớp hành chính</span>
+              <strong class="detail-value">{{ profile?.lopTen || '---' }}</strong>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Khoa đào tạo</span>
+              <span class="detail-value">{{ profile?.khoaTen || '---' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Ngày nhập học</span>
+              <span class="detail-value">{{ profile?.ngayNhapHoc || '---' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer-bar">
+          <div class="barcode-sim">
+            <span>||||| | |||| ||||| || |||||| |||| | |||||</span>
+            <small>Xác thực đào tạo điện tử</small>
+          </div>
+          <span class="card-validity">Chính quy 2024 - 2028</span>
+        </div>
+      </aside>
+
+      <!-- Profile Edit Forms -->
+      <div class="profile-forms-column">
+        <!-- Contact Information Form -->
+        <article class="content-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Thông tin liên hệ cá nhân</h2>
+              <p>Sinh viên có thể chủ động cập nhật số điện thoại, email và địa chỉ để phòng đào tạo liên hệ.</p>
+            </div>
+            <span class="badge-accent">Tự cập nhật</span>
+          </div>
+
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="portal-form">
+            <div class="form-row">
+              <label>
+                <span>Email sinh viên / cá nhân <strong class="req">*</strong></span>
+                <input
+                  type="email"
+                  formControlName="email"
+                  placeholder="example@student.edu.vn"
+                />
+                @if (profileForm.controls.email.touched && profileForm.controls.email.invalid) {
+                  <small class="field-error">Vui lòng nhập định dạng email hợp lệ.</small>
+                }
+              </label>
+
+              <label>
+                <span>Số điện thoại liên lạc</span>
+                <input
+                  type="tel"
+                  formControlName="soDienThoai"
+                  placeholder="0912 345 678"
+                />
+              </label>
+            </div>
+
+            <label>
+              <span>Địa chỉ thường trú / Nơi ở hiện tại</span>
+              <textarea
+                formControlName="diaChi"
+                rows="3"
+                placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố..."
+              ></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" [disabled]="savingProfile">
+                {{ savingProfile ? 'Đang lưu...' : 'Cập nhật thông tin liên hệ' }}
+              </button>
+            </div>
+          </form>
+        </article>
+
+        <!-- Change Password Form -->
+        <article class="content-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Bảo mật & Đổi mật khẩu</h2>
+              <p>Nên định kỳ thay đổi mật khẩu tài khoản sinh viên để bảo vệ thông tin học vụ.</p>
+            </div>
+            <span class="badge-lock">Bảo mật</span>
+          </div>
+
+          <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" class="portal-form">
+            <div class="form-row">
+              <label>
+                <span>Mật khẩu hiện tại <strong class="req">*</strong></span>
+                <input
+                  type="password"
+                  formControlName="oldPassword"
+                  placeholder="••••••••"
+                />
+              </label>
+
+              <label>
+                <span>Mật khẩu mới <strong class="req">*</strong></span>
+                <input
+                  type="password"
+                  formControlName="newPassword"
+                  placeholder="Ít nhất 6 ký tự"
+                />
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label>
+                <span>Xác nhận mật khẩu mới <strong class="req">*</strong></span>
+                <input
+                  type="password"
+                  formControlName="confirmPassword"
+                  placeholder="Nhập lại mật khẩu mới"
+                />
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-secondary" [disabled]="changingPassword">
+                {{ changingPassword ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu' }}
+              </button>
+            </div>
+          </form>
+        </article>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== TAB 2: ĐĂNG KÝ MÔN HỌC ==================== -->
+  @if (mode === 'registration') {
+    <div class="registration-portal-layout">
+      <!-- Registration Period Status Alert -->
+      @if (currentSelectedSemesterStatus === 'OPEN') {
+        <div class="period-alert period-alert-open">
+          <div class="period-alert-icon">🟢</div>
+          <div class="period-alert-content">
+            <strong>Đang mở đợt đăng ký tín chỉ: {{ (currentDot?.tenDot && !currentDot?.tenDot?.includes('?')) ? currentDot?.tenDot : ('Đợt đăng ký tín chỉ Học kỳ ' + (currentDot?.hocKy || '1') + ' (' + (currentDot?.namHoc || '2026-2027') + ')') }}</strong>
+            <p>Hệ thống cho phép đăng ký mới và rút/hủy môn học trong đợt đăng ký hiện tại (Học kỳ {{ currentDot?.hocKy }} - Năm học {{ currentDot?.namHoc }}).</p>
+          </div>
+        </div>
+      } @else if (currentSelectedSemesterStatus === 'NOT_OPEN_YET') {
+        <div class="period-alert period-alert-not-open">
+          <div class="period-alert-icon">🟡</div>
+          <div class="period-alert-content">
+            <strong>Chưa mở đợt đăng ký (Học kỳ {{ regHocKy }} - Năm học {{ regNamHoc }})</strong>
+            <p>Học kỳ này hiện <strong>CHƯA MỞ</strong> đợt đăng ký môn học. Nhà trường chưa mở cổng đăng ký tín chỉ cho học kỳ này, bạn chưa thể đăng ký môn học.</p>
+          </div>
+        </div>
+      } @else if (currentSelectedSemesterStatus === 'ENDED') {
+        <div class="period-alert period-alert-history">
+          <div class="period-alert-icon">ℹ️</div>
+          <div class="period-alert-content">
+            <strong>Học kỳ đã kết thúc (Học kỳ {{ regHocKy }} - Năm học {{ regNamHoc }})</strong>
+            <p>Bạn đang xem lịch sử học phần đã đăng ký của học kỳ trước. Các thao tác đăng ký thêm hoặc hủy môn học không khả dụng.</p>
+          </div>
+        </div>
+      } @else {
+        <div class="period-alert period-alert-closed">
+          <div class="period-alert-icon">🔴</div>
+          <div class="period-alert-content">
+            <strong>Cổng đăng ký tín chỉ hiện đang ĐÓNG</strong>
+            <p>Nhà trường hiện chưa mở hoặc đã khóa cổng đăng ký môn học trực tuyến. Bạn chỉ có thể xem danh sách học phần đã đăng ký.</p>
+          </div>
+        </div>
+      }
+      <!-- Registration Semester Selector & Status -->
+      <section class="control-panel print-hide">
+        <div class="control-left">
+          <div class="select-group">
+            <label>Học kỳ:
+              <select [(ngModel)]="regHocKy" (ngModelChange)="onRegistrationSemesterChange()">
+                @for (sem of semesters; track sem.id) {
+                  <option [value]="sem.id">{{ getSemesterLabelWithStatus(sem.id) }}</option>
+                }
+              </select>
+            </label>
+
+            <label>Năm học:
+              <select [(ngModel)]="regNamHoc" (ngModelChange)="onRegistrationSemesterChange()">
+                @for (year of academicYears; track year) {
+                  <option [value]="year">{{ year }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="control-right">
+          <div class="credit-counter-card">
+            <div class="counter-head">
+              <span>Số tín chỉ đã đăng ký</span>
+              <strong>{{ totalRegisteredCredits }} / 24 TC</strong>
+            </div>
+            <div class="progress-bar-bg">
+              <div
+                class="progress-bar-fill"
+                [style.width.%]="registrationProgressPercent"
+                [class.warn]="totalRegisteredCredits > 20"
+              ></div>
+            </div>
+            <small class="counter-note">Quy định: Tối thiểu 12 TC, Tối đa 24 TC</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Danh sách môn đã đăng ký -->
+      <article class="content-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Danh sách học phần đã đăng ký (HK {{ regHocKy }} · {{ regNamHoc }})</h2>
+            <p>Các môn học bạn đã đăng ký thành công trong đợt đăng ký này.</p>
+          </div>
+          <div class="badge-group">
+            <span class="badge-count">{{ registrations.length }} môn học</span>
+            <span class="badge-credits">{{ totalRegisteredCredits }} tín chỉ</span>
+          </div>
+        </div>
+
+        @if (loading && registrations.length === 0) {
+          <div class="portal-loading">Đang tải dữ liệu đăng ký...</div>
+        } @else if (registrations.length === 0) {
+          <div class="empty-state-card">
+            <div class="empty-icon">📋</div>
+            <h3>Chưa có môn học nào được đăng ký</h3>
+            <p>Học kỳ này bạn chưa đăng ký học phần nào. Hãy tham khảo danh mục môn mở bên dưới để đăng ký.</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table class="portal-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">STT</th>
+                  <th>Mã HP</th>
+                  <th>Tên học phần</th>
+                  <th style="text-align: center;">Số TC</th>
+                  <th>Học kỳ</th>
+                  <th>Ngày đăng ký</th>
+                  <th>Trạng thái</th>
+                  <th class="print-hide" style="text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (reg of registrations; track reg.id) {
+                  <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td><span class="course-code-badge">{{ reg.monHocMa }}</span></td>
+                    <td><strong>{{ reg.monHocTen }}</strong></td>
+                    <td style="text-align: center;"><span class="credit-badge">{{ reg.soTinChi || 3 }} TC</span></td>
+                    <td>HK {{ reg.hocKy }} · {{ reg.namHoc }}</td>
+                    <td>{{ reg.ngayDangKy ? (reg.ngayDangKy | date:'dd/MM/yyyy HH:mm') : 'Hợp lệ' }}</td>
+                    <td><span class="status-pill status-active">Đã đăng ký</span></td>
+                    <td class="print-hide" style="text-align: right;">
+                      @if (isCurrentSemesterOpen) {
+                        <button
+                          type="button"
+                          class="btn-danger-outline"
+                          (click)="openCancelModal(reg)"
+                          title="Hủy đăng ký môn này"
+                        >
+                          Hủy môn
+                        </button>
+                      } @else {
+                        <span class="status-pill status-muted">Đã khóa kỳ</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+
+      <!-- Section: Danh sách môn học mở đăng ký -->
+      <article class="content-panel print-hide">
+        <div class="panel-header">
+          <div>
+            <h2>Danh mục môn học mở cho Lớp hành chính {{ profile?.lopTen ? '(' + profile?.lopTen + ')' : '' }}</h2>
+            <p>Các học phần được Nhà trường mở cho Khóa & Khoa của bạn trong Học kỳ {{ regHocKy }} ({{ regNamHoc }}). Bạn chọn các môn muốn học để đăng ký; môn không muốn học thì không cần đăng ký.</p>
+          </div>
+          <div class="search-filter-box">
+            <input
+              type="text"
+              [(ngModel)]="courseSearch"
+              placeholder="Tìm theo mã hoặc tên môn học..."
+              class="search-input"
+            />
+            @if (availableDepartments.length > 0) {
+              <select [(ngModel)]="selectedKhoaFilter" class="filter-select">
+                <option value="">Tất cả các Khoa</option>
+                @for (dept of availableDepartments; track dept) {
+                  <option [value]="dept">{{ dept }}</option>
+                }
+              </select>
+            }
+          </div>
+        </div>
+
+        @if (filteredCourses.length === 0) {
+          <div class="empty-state-card">
+            <p>Không tìm thấy môn học nào phù hợp với từ khóa tìm kiếm.</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table class="portal-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">STT</th>
+                  <th>Mã HP</th>
+                  <th>Tên học phần</th>
+                  <th style="text-align: center;">Số TC</th>
+                  <th>Lý thuyết / TH</th>
+                  <th>Khoa phụ trách</th>
+                  <th>Môn tiên quyết</th>
+                  <th style="text-align: right;">Đăng ký</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (course of filteredCourses; track course.id) {
+                  @let isRegistered = isCourseRegistered(course.id);
+                  <tr [class.row-registered]="isRegistered">
+                    <td>{{ $index + 1 }}</td>
+                    <td><span class="course-code-badge">{{ course.maMonHoc }}</span></td>
+                    <td>
+                      <div class="course-name-cell">
+                        <strong>{{ course.tenMonHoc }}</strong>
+                        @if (course.moTa) {
+                          <small class="course-desc">{{ course.moTa }}</small>
+                        }
+                      </div>
+                    </td>
+                    <td style="text-align: center;"><span class="credit-badge">{{ course.soTinChi }} TC</span></td>
+                    <td>{{ course.soTietLyThuyet || 0 }} LT / {{ course.soTietThucHanh || 0 }} TH</td>
+                    <td>{{ course.khoaTen || 'Khoa chuyên môn' }}</td>
+                    <td>{{ course.monHocTienQuyet || 'Không' }}</td>
+                    <td style="text-align: right;">
+                      @if (isRegistered) {
+                        <span class="status-pill status-active">✓ Đã đăng ký</span>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn-primary btn-sm"
+                          [disabled]="!isCurrentSemesterOpen || registeringId === course.id"
+                          [title]="isSemesterNotOpenYet ? 'Học kỳ này chưa mở đợt đăng ký' : isPastSemester ? 'Học kỳ đã kết thúc' : !isCurrentSemesterOpen ? 'Cổng đăng ký đang đóng' : ''"
+                          (click)="registerCourse(course)"
+                        >
+                          {{ isSemesterNotOpenYet ? 'Chưa mở' : isPastSemester ? 'Đã kết thúc' : !isCurrentSemesterOpen ? 'Đã khóa' : registeringId === course.id ? 'Đang gửi...' : 'Đăng ký' }}
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+
+      <!-- Confirmation Modal for Canceling Registration -->
+      @if (pendingCancelRegistration) {
+        <div class="modal-overlay" (click)="closeCancelModal()">
+          <div class="modal-dialog" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Xác nhận hủy đăng ký môn học</h3>
+              <button type="button" class="btn-close" (click)="closeCancelModal()">×</button>
+            </div>
+            <div class="modal-body">
+              <p>Bạn có chắc chắn muốn hủy đăng ký học phần sau?</p>
+              <div class="cancel-target-box">
+                <strong>{{ pendingCancelRegistration.monHocMa }} - {{ pendingCancelRegistration.monHocTen }}</strong>
+                <span>Số tín chỉ: {{ pendingCancelRegistration.soTinChi || 3 }} TC | HK {{ pendingCancelRegistration.hocKy }} ({{ pendingCancelRegistration.namHoc }})</span>
+              </div>
+              <small class="warning-text">⚠️ Sau khi hủy, học phần sẽ được gỡ khỏi danh sách lớp học phần của bạn.</small>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" (click)="closeCancelModal()">Quay lại</button>
+              <button
+                type="button"
+                class="btn-danger"
+                [disabled]="cancelling"
+                (click)="confirmCancelRegistration()"
+              >
+                {{ cancelling ? 'Đang hủy...' : 'Đồng ý hủy môn' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ==================== TAB 3: KẾT QUẢ HỌC TẬP / XEM ĐIỂM ==================== -->
+  @if (mode === 'grades') {
+    <div class="grades-portal-layout">
+      <!-- Controls & Filter Bar -->
+      <section class="control-panel print-hide">
+        <div class="control-left">
+          <div class="select-group">
+            <label>Lọc học kỳ:
+              <select [(ngModel)]="gradeHocKy" (ngModelChange)="onGradeFilterChange()">
+                <option value="">Tất cả học kỳ</option>
+                @for (sem of semesters; track sem.id) {
+                  <option [value]="sem.id">{{ sem.name }}</option>
+                }
+              </select>
+            </label>
+
+            <label>Năm học:
+              <select [(ngModel)]="gradeNamHoc" (ngModelChange)="onGradeFilterChange()">
+                <option value="">Tất cả năm học</option>
+                @for (year of academicYears; track year) {
+                  <option [value]="year">{{ year }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="control-right">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="showGradingScale = !showGradingScale"
+          >
+            {{ showGradingScale ? 'Ẩn thang điểm' : 'Tra cứu thang điểm 4 & chữ' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Grading Scale Reference Drawer -->
+      @if (showGradingScale) {
+        <div class="grading-scale-card print-hide">
+          <div class="scale-header">
+            <h4>Bảng tham chiếu thang điểm quy chuẩn tín chỉ (Bộ GD&ĐT)</h4>
+            <button type="button" class="alert-dismiss" (click)="showGradingScale = false">×</button>
+          </div>
+          <div class="scale-table-wrap">
+            <table class="scale-table">
+              <thead>
+                <tr>
+                  <th>Thang 10</th>
+                  <th>Điểm Chữ</th>
+                  <th>Thang 4</th>
+                  <th>Đánh giá</th>
+                  <th>Xếp loại học lực</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>8.5 – 10.0</td><td><span class="badge-a">A</span></td><td>4.0</td><td>Đạt</td><td>Xuất sắc</td></tr>
+                <tr><td>8.0 – 8.4</td><td><span class="badge-b-plus">B+</span></td><td>3.5</td><td>Đạt</td><td>Giỏi</td></tr>
+                <tr><td>7.0 – 7.9</td><td><span class="badge-b">B</span></td><td>3.0</td><td>Đạt</td><td>Khá</td></tr>
+                <tr><td>6.5 – 6.9</td><td><span class="badge-c-plus">C+</span></td><td>2.5</td><td>Đạt</td><td>Trung bình khá</td></tr>
+                <tr><td>5.5 – 6.4</td><td><span class="badge-c">C</span></td><td>2.0</td><td>Đạt</td><td>Trung bình</td></tr>
+                <tr><td>5.0 – 5.4</td><td><span class="badge-d-plus">D+</span></td><td>1.5</td><td>Đạt</td><td>Trung bình yếu</td></tr>
+                <tr><td>4.0 – 4.9</td><td><span class="badge-d">D</span></td><td>1.0</td><td>Đạt</td><td>Yếu</td></tr>
+                <tr><td>&lt; 4.0</td><td><span class="badge-f">F</span></td><td>0.0</td><td>Không đạt</td><td>Kém (Phải học lại)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Academic KPI Metric Cards -->
+      <section class="grades-metrics-grid">
+        <article class="kpi-card highlight-kpi">
+          <div class="kpi-top">
+            <span class="kpi-label">GPA Hệ 10</span>
+            <span class="kpi-tag">Thang 10</span>
+          </div>
+          <strong class="kpi-val">{{ gpa10 }}</strong>
+          <span class="kpi-caption">Điểm trung bình tích lũy theo tín chỉ</span>
+        </article>
+
+        <article class="kpi-card highlight-kpi-4">
+          <div class="kpi-top">
+            <span class="kpi-label">GPA Hệ 4</span>
+            <span class="kpi-tag">Thang 4.0</span>
+          </div>
+          <strong class="kpi-val">{{ gpa4 }}</strong>
+          <span class="kpi-caption">Quy chuẩn xét học bổng & tốt nghiệp</span>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Tín chỉ tích lũy</span>
+            <span class="kpi-tag">Đạt yêu cầu</span>
+          </div>
+          <strong class="kpi-val">{{ totalPassedCredits }} <small>/ {{ totalAttemptedCredits }} TC</small></strong>
+          <span class="kpi-caption">Tổng số tín chỉ học phần đạt</span>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Xếp loại học lực</span>
+            <span class="kpi-tag">Đào tạo</span>
+          </div>
+          <div class="kpi-badge-wrap">
+            <span class="standing-pill {{ academicStanding.badgeClass }}">{{ academicStanding.label }}</span>
+          </div>
+          <span class="kpi-caption">Đánh giá chung toàn khóa</span>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Tỷ lệ qua môn</span>
+            <span class="kpi-tag">Tỉ lệ đạt</span>
+          </div>
+          <strong class="kpi-val">{{ passRate }}</strong>
+          <span class="kpi-caption">{{ passedCount }} môn đạt, {{ failedCount }} môn nợ</span>
+        </article>
+      </section>
+
+      <!-- Detailed Transcript Table -->
+      <article class="content-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Bảng điểm chi tiết kết quả học tập</h2>
+            <p>Điểm đánh giá từng thành phần, điểm tổng kết môn học và điểm quy đổi.</p>
+          </div>
+          <span class="badge-count">{{ grades.length }} học phần</span>
+        </div>
+
+        @if (loading && grades.length === 0) {
+          <div class="portal-loading">Đang tải bảng điểm...</div>
+        } @else if (grades.length === 0) {
+          <div class="empty-state-card">
+            <div class="empty-icon">📊</div>
+            <h3>Chưa có dữ liệu điểm</h3>
+            <p>Hiện chưa có kết quả đánh giá điểm nào cho học kỳ hoặc niên khóa này.</p>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table class="portal-table grade-table">
+              <thead>
+                <tr>
+                  <th style="width: 45px;">STT</th>
+                  <th>Mã HP</th>
+                  <th>Tên học phần</th>
+                  <th style="text-align: center;">Số TC</th>
+                  <th>Học kỳ</th>
+                  <th style="text-align: center;">CC (10%)</th>
+                  <th style="text-align: center;">GK (30%)</th>
+                  <th style="text-align: center;">CK (60%)</th>
+                  <th style="text-align: center;">Điểm TK (10)</th>
+                  <th style="text-align: center;">Điểm chữ</th>
+                  <th style="text-align: center;">Điểm 4</th>
+                  <th style="text-align: center;">Kết quả</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (grade of grades; track grade.id) {
+                  @let scale = getGradeScale(grade.diemTongKet);
+                  <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td><span class="course-code-badge">{{ grade.monHocMa || '---' }}</span></td>
+                    <td><strong>{{ grade.monHocTen }}</strong></td>
+                    <td style="text-align: center;"><span class="credit-badge">{{ grade.soTinChi || 3 }} TC</span></td>
+                    <td>HK {{ grade.hocKy || '1' }} ({{ grade.namHoc || '---' }})</td>
+                    <td style="text-align: center;" class="score-cell">{{ grade.diemChuyenCan !== null ? grade.diemChuyenCan : '-' }}</td>
+                    <td style="text-align: center;" class="score-cell">{{ grade.diemGiuaKy !== null ? grade.diemGiuaKy : '-' }}</td>
+                    <td style="text-align: center;" class="score-cell">{{ grade.diemCuoiKy !== null ? grade.diemCuoiKy : '-' }}</td>
+                    <td style="text-align: center;" class="score-cell highlight-final">
+                      <strong>{{ grade.diemTongKet !== null ? grade.diemTongKet : '-' }}</strong>
+                    </td>
+                    <td style="text-align: center;">
+                      <span class="letter-badge {{ scale.badgeClass }}">{{ scale.letter }}</span>
+                    </td>
+                    <td style="text-align: center;">{{ grade.diemTongKet !== null ? scale.gpa4.toFixed(1) : '-' }}</td>
+                    <td style="text-align: center;">
+                      <span [class]="grade.dat || (grade.diemTongKet !== null && grade.diemTongKet >= 4.0) ? 'status-pill status-active' : 'status-pill status-danger'">
+                        {{ grade.dat || (grade.diemTongKet !== null && grade.diemTongKet >= 4.0) ? 'Đạt' : 'Học lại' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+    </div>
+  }
+</div>

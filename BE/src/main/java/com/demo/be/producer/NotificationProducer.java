@@ -1,0 +1,37 @@
+package com.demo.be.producer;
+
+import com.demo.be.config.RabbitMQConfig;
+import com.demo.be.dto.message.NotificationEventMessage;
+import com.demo.be.service.ThongBaoService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class NotificationProducer {
+
+    private final RabbitTemplate rabbitTemplate;
+    private final ThongBaoService thongBaoService;
+
+    public void sendNotification(NotificationEventMessage event) {
+        log.info("[RABBITMQ PRODUCER] ===> Đang đẩy message sự kiện [{}] môn [{}] vào Exchange: {}",
+                event.getEventType(), event.getTenMonHoc(), RabbitMQConfig.EXCHANGE_NAME);
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EXCHANGE_NAME,
+                    RabbitMQConfig.ROUTING_KEY_GRADE,
+                    event
+            );
+            log.info("[RABBITMQ PRODUCER] ===> Gửi message thành công tới RabbitMQ Queue: {}", RabbitMQConfig.QUEUE_NAME);
+        } catch (AmqpException e) {
+            log.warn("[RABBITMQ PRODUCER] [FALLBACK] Không thể kết nối tới RabbitMQ Server (5672): {}. Tự động chuyển sang xử lý trực tiếp nội bộ...", e.getMessage());
+            // Fallback an toàn: vẫn lưu thông báo cho sinh viên & giảng viên mà không gây lỗi request
+            thongBaoService.processNotificationEvent(event);
+        }
+    }
+}
