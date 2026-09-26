@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 export type GiangVienItem = {
   id: number;
@@ -24,7 +25,7 @@ export type KhoaOption = {
 
 @Component({
   selector: 'app-admin-giang-vien',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './admin-giang-vien.component.html',
   styleUrl: './admin-giang-vien.component.scss',
 })
@@ -39,6 +40,9 @@ export class AdminGiangVienComponent implements OnInit {
   protected searchText = '';
   protected filterKhoaId = '';
   protected filterHocVi = '';
+
+  protected currentPage = 1;
+  protected pageSize = 15;
 
   protected readonly hocViOptions = ['Cử nhân', 'Kỹ sư', 'Thạc sĩ', 'Tiến sĩ', 'Phó Giáo sư', 'Giáo sư'];
 
@@ -105,6 +109,11 @@ export class AdminGiangVienComponent implements OnInit {
     });
   }
 
+  protected get paginatedGiangViens(): GiangVienItem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredGiangViens.slice(start, start + this.pageSize);
+  }
+
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -160,6 +169,9 @@ export class AdminGiangVienComponent implements OnInit {
       khoaId: String(item.khoaId),
       active: item.active,
     });
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.cd.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -193,5 +205,6 @@ export class AdminGiangVienComponent implements OnInit {
       khoaId: '',
       active: true,
     });
+    this.cd.detectChanges();
   }
 }

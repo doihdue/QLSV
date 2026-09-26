@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 export type LopItem = {
   id: number;
@@ -22,7 +23,7 @@ export type KhoaOption = {
 
 @Component({
   selector: 'app-admin-lop',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './admin-lop.component.html',
   styleUrl: './admin-lop.component.scss',
 })
@@ -36,6 +37,9 @@ export class AdminLopComponent implements OnInit {
 
   protected searchText = '';
   protected filterKhoaId = '';
+
+  protected currentPage = 1;
+  protected pageSize = 15;
 
   protected editingId: number | null = null;
   protected loading = false;
@@ -95,6 +99,11 @@ export class AdminLopComponent implements OnInit {
     });
   }
 
+  protected get paginatedLops(): LopItem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredLops.slice(start, start + this.pageSize);
+  }
+
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -144,6 +153,9 @@ export class AdminLopComponent implements OnInit {
       khoaId: String(item.khoaId),
       active: item.active,
     });
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.cd.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -175,5 +187,6 @@ export class AdminLopComponent implements OnInit {
       khoaId: '',
       active: true,
     });
+    this.cd.detectChanges();
   }
 }

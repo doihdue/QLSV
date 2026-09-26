@@ -115,18 +115,19 @@
             <input
               type="text"
               [(ngModel)]="searchText"
+              (ngModelChange)="currentPage = 1"
               placeholder="Tìm theo MSSV, họ tên, email, SĐT..."
             />
           </div>
 
-          <select [(ngModel)]="filterLopId" class="filter-select">
+          <select [(ngModel)]="filterLopId" (ngModelChange)="currentPage = 1" class="filter-select">
             <option value="">Tất cả Lớp hành chính</option>
             @for (l of lops; track l.id) {
               <option [value]="l.id">{{ l.tenLop }}</option>
             }
           </select>
 
-          <select [(ngModel)]="filterGender" class="filter-select">
+          <select [(ngModel)]="filterGender" (ngModelChange)="currentPage = 1" class="filter-select">
             <option value="">Tất cả giới tính</option>
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
@@ -160,7 +161,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (sv of filteredSinhViens; track sv.id) {
+              @for (sv of paginatedSinhViens; track sv.id) {
                 <tr>
                   <td>
                     <span class="code-badge">{{ sv.mssv }}</span>
@@ -196,6 +197,16 @@
             </tbody>
           </table>
         </div>
+
+        <app-pagination
+          [totalItems]="filteredSinhViens.length"
+          [pageSize]="pageSize"
+          [currentPage]="currentPage"
+          [pageSizeOptions]="[5, 10, 20, 50]"
+          itemName="sinh viên"
+          (pageChange)="currentPage = $event"
+          (pageSizeChange)="pageSize = $event"
+        ></app-pagination>
       }
     </article>
   </div>

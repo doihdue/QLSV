@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, OnDestroy, OnInit } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../services/auth.service';
@@ -26,10 +26,12 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly notificationService = inject(NotificationService);
+  private readonly cd = inject(ChangeDetectorRef);
 
   protected notifications: NotificationItem[] = [];
   protected unreadCount = 0;
   protected showNotifications = false;
+  protected loadingNotifications = false;
   protected mobileSidebarOpen = false;
 
   private pollTimer: any = null;
@@ -37,8 +39,14 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.refreshUnreadCount();
+    // Tải trước danh sách thông báo ngầm để khi người dùng click lần đầu là có ngay dữ liệu
+    this.loadNotifications(false);
+
     this.pollTimer = setInterval(() => {
       this.refreshUnreadCount();
+      if (this.showNotifications) {
+        this.loadNotifications(false);
+      }
     }, 15000);
 
     // Tự động đóng menu trên mobile khi chuyển trang
@@ -46,6 +54,8 @@ export class ShellComponent implements OnInit, OnDestroy {
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
         this.mobileSidebarOpen = false;
+        this.showNotifications = false;
+        this.cd.detectChanges();
       });
   }
 
@@ -55,6 +65,17 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
     if (this.routerSub) {
       this.routerSub.unsubscribe();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showNotifications) {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.notification-container')) {
+        this.showNotifications = false;
+        this.cd.detectChanges();
+      }
     }
   }
 
@@ -70,25 +91,39 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.notificationService.getUnreadCount().subscribe({
       next: (res) => {
         this.unreadCount = res.unreadCount;
+        this.cd.detectChanges();
       },
       error: () => {},
     });
   }
 
-  protected toggleNotifications(): void {
+  protected toggleNotifications(event?: MouseEvent): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showNotifications = !this.showNotifications;
     if (this.showNotifications) {
-      this.loadNotifications();
+      this.loadNotifications(true);
     }
+    this.cd.detectChanges();
   }
 
-  protected loadNotifications(): void {
+  protected loadNotifications(showLoading = false): void {
+    if (showLoading) {
+      this.loadingNotifications = true;
+      this.cd.detectChanges();
+    }
     this.notificationService.getMyNotifications().subscribe({
       next: (list) => {
-        this.notifications = list;
-        this.unreadCount = list.filter((n) => !n.daDoc).length;
+        this.notifications = list || [];
+        this.unreadCount = this.notifications.filter((n) => !n.daDoc).length;
+        this.loadingNotifications = false;
+        this.cd.detectChanges();
       },
-      error: () => {},
+      error: () => {
+        this.loadingNotifications = false;
+        this.cd.detectChanges();
+      },
     });
   }
 
@@ -97,6 +132,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       next: () => {
         this.notifications = this.notifications.map((n) => ({ ...n, daDoc: true }));
         this.unreadCount = 0;
+        this.cd.detectChanges();
       },
       error: () => {},
     });
@@ -108,10 +144,12 @@ export class ShellComponent implements OnInit, OnDestroy {
         next: () => {
           item.daDoc = true;
           this.unreadCount = Math.max(0, this.unreadCount - 1);
+          this.cd.detectChanges();
         },
       });
     }
     this.showNotifications = false;
+    this.cd.detectChanges();
     if (item.lienKet) {
       void this.router.navigate([item.lienKet]);
     }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 export type SinhVienGpaItem = {
   sinhVienId: number;
@@ -23,7 +24,7 @@ export type LopOption = {
 
 @Component({
   selector: 'app-thong-ke-gpa',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './thong-ke-gpa.component.html',
   styleUrl: './thong-ke-gpa.component.scss',
 })
@@ -38,6 +39,9 @@ export class ThongKeGpaComponent implements OnInit {
   protected selectedXepLoai = '';
   protected searchText = '';
   protected sortBy = 'gpa_desc';
+
+  protected currentPage = 1;
+  protected pageSize = 15;
 
   protected loading = false;
   protected errorMessage = '';
@@ -80,6 +84,7 @@ export class ThongKeGpaComponent implements OnInit {
   }
 
   protected onLopChange(): void {
+    this.currentPage = 1;
     this.loadStats();
   }
 
@@ -140,6 +145,7 @@ export class ThongKeGpaComponent implements OnInit {
   }
 
   protected filterByRank(rank: string): void {
+    this.currentPage = 1;
     if (this.selectedXepLoai === rank) {
       this.selectedXepLoai = '';
     } else {
@@ -174,6 +180,11 @@ export class ThongKeGpaComponent implements OnInit {
       default:
         return filtered;
     }
+  }
+
+  protected get paginatedData(): SinhVienGpaItem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredData.slice(start, start + this.pageSize);
   }
 
   protected getRankClass(rank: string): string {

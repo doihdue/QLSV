@@ -76,11 +76,11 @@ export class SectionComponent implements OnInit {
           dangKy: results.dangKy.length,
         };
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: () => {
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }

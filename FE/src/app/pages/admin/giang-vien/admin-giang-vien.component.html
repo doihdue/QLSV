@@ -102,18 +102,19 @@
             <input
               type="text"
               [(ngModel)]="searchText"
+              (ngModelChange)="currentPage = 1"
               placeholder="Tìm theo mã GV, họ tên, email, chuyên môn..."
             />
           </div>
 
-          <select [(ngModel)]="filterKhoaId" class="filter-select">
+          <select [(ngModel)]="filterKhoaId" (ngModelChange)="currentPage = 1" class="filter-select">
             <option value="">Tất cả các Khoa</option>
             @for (k of khoas; track k.id) {
               <option [value]="k.id">{{ k.tenKhoa }}</option>
             }
           </select>
 
-          <select [(ngModel)]="filterHocVi" class="filter-select">
+          <select [(ngModel)]="filterHocVi" (ngModelChange)="currentPage = 1" class="filter-select">
             <option value="">Tất cả học vị</option>
             @for (hv of hocViOptions; track hv) {
               <option [value]="hv">{{ hv }}</option>
@@ -147,7 +148,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (gv of filteredGiangViens; track gv.id) {
+              @for (gv of paginatedGiangViens; track gv.id) {
                 <tr>
                   <td>
                     <span class="code-badge">{{ gv.maGiangVien }}</span>
@@ -178,6 +179,16 @@
             </tbody>
           </table>
         </div>
+
+        <app-pagination
+          [totalItems]="filteredGiangViens.length"
+          [pageSize]="pageSize"
+          [currentPage]="currentPage"
+          [pageSizeOptions]="[5, 10, 15, 25, 50, 100]"
+          itemName="giảng viên"
+          (pageChange)="currentPage = $event"
+          (pageSizeChange)="pageSize = $event"
+        ></app-pagination>
       }
     </article>
   </div>

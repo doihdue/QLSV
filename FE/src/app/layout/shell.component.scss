@@ -421,6 +421,31 @@
     max-height: 360px;
     overflow-y: auto;
 
+    .noti-spinner-wrapper {
+      padding: 36px 16px;
+      text-align: center;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+
+      .noti-spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid #e2e8f0;
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: notiSpin 0.7s linear infinite;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.85rem;
+      }
+    }
+
     .empty-noti {
       padding: 36px 16px;
       text-align: center;
@@ -508,6 +533,12 @@
         margin-top: 6px;
       }
     }
+  }
+}
+
+@keyframes notiSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

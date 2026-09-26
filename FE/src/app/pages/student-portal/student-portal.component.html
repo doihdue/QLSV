@@ -399,11 +399,12 @@
             <input
               type="text"
               [(ngModel)]="courseSearch"
+              (ngModelChange)="coursePage = 1"
               placeholder="Tìm theo mã hoặc tên môn học..."
               class="search-input"
             />
             @if (availableDepartments.length > 0) {
-              <select [(ngModel)]="selectedKhoaFilter" class="filter-select">
+              <select [(ngModel)]="selectedKhoaFilter" (ngModelChange)="coursePage = 1" class="filter-select">
                 <option value="">Tất cả các Khoa</option>
                 @for (dept of availableDepartments; track dept) {
                   <option [value]="dept">{{ dept }}</option>
@@ -442,10 +443,10 @@
                 </tr>
               </thead>
               <tbody>
-                @for (course of filteredCourses; track course.id) {
+                @for (course of paginatedCourses; track course.id; let i = $index) {
                   @let isRegistered = isCourseRegistered(course.id);
                   <tr [class.row-registered]="isRegistered">
-                    <td>{{ $index + 1 }}</td>
+                    <td>{{ (coursePage - 1) * coursePageSize + i + 1 }}</td>
                     <td><span class="course-code-badge">{{ course.maMonHoc }}</span></td>
                     <td>
                       <div class="course-name-cell">
@@ -486,6 +487,16 @@
               </tbody>
             </table>
           </div>
+
+          <app-pagination
+            [totalItems]="filteredCourses.length"
+            [pageSize]="coursePageSize"
+            [currentPage]="coursePage"
+            [pageSizeOptions]="[5, 10, 20, 50]"
+            itemName="môn học"
+            (pageChange)="coursePage = $event"
+            (pageSizeChange)="coursePageSize = $event"
+          ></app-pagination>
         }
       </article>
 
@@ -681,10 +692,10 @@
                 </tr>
               </thead>
               <tbody>
-                @for (grade of grades; track grade.id) {
+                @for (grade of paginatedGrades; track grade.id; let i = $index) {
                   @let scale = getGradeScale(grade.diemTongKet);
                   <tr>
-                    <td>{{ $index + 1 }}</td>
+                    <td>{{ (gradePage - 1) * gradePageSize + i + 1 }}</td>
                     <td><span class="course-code-badge">{{ grade.monHocMa || '---' }}</span></td>
                     <td><strong>{{ grade.monHocTen }}</strong></td>
                     <td style="text-align: center;"><span class="credit-badge">{{ grade.soTinChi || 3 }} TC</span></td>
@@ -709,6 +720,16 @@
               </tbody>
             </table>
           </div>
+
+          <app-pagination
+            [totalItems]="grades.length"
+            [pageSize]="gradePageSize"
+            [currentPage]="gradePage"
+            [pageSizeOptions]="[5, 10, 15, 25, 50]"
+            itemName="học phần"
+            (pageChange)="gradePage = $event"
+            (pageSizeChange)="gradePageSize = $event"
+          ></app-pagination>
         }
       </article>
     </div>

@@ -30,6 +30,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException exception) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                exception.getMessage(),
+                List.of()
+        );
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(RuntimeException exception) {
         ApiErrorResponse response = new ApiErrorResponse(

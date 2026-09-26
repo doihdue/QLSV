@@ -74,6 +74,7 @@
             <input
               type="text"
               [(ngModel)]="searchText"
+              (ngModelChange)="currentPage = 1"
               placeholder="Tìm theo mã khoa, tên khoa, mô tả..."
             />
           </div>
@@ -101,7 +102,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (khoa of filteredKhoas; track khoa.id) {
+              @for (khoa of paginatedKhoas; track khoa.id) {
                 <tr>
                   <td>
                     <span class="code-badge">{{ khoa.maKhoa }}</span>
@@ -124,6 +125,16 @@
             </tbody>
           </table>
         </div>
+
+        <app-pagination
+          [totalItems]="filteredKhoas.length"
+          [pageSize]="pageSize"
+          [currentPage]="currentPage"
+          [pageSizeOptions]="[5, 10, 20, 50]"
+          itemName="khoa"
+          (pageChange)="currentPage = $event"
+          (pageSizeChange)="pageSize = $event"
+        ></app-pagination>
       }
     </article>
   </div>

@@ -2,6 +2,7 @@ package com.demo.be.repository;
 
 import com.demo.be.model.MonHocMo;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,6 +49,13 @@ public interface MonHocMoRepository extends JpaRepository<MonHocMo, Long> {
     );
 
     boolean existsByMonHoc_IdAndLop_IdAndHocKyAndNamHoc(
+            Long monHocId,
+            Long lopId,
+            String hocKy,
+            String namHoc
+    );
+
+    Optional<MonHocMo> findFirstByMonHoc_IdAndLop_IdAndHocKyAndNamHoc(
             Long monHocId,
             Long lopId,
             String hocKy,

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 export type SinhVienItem = {
   id: number;
@@ -30,7 +31,7 @@ export type LopOption = {
 
 @Component({
   selector: 'app-admin-sinh-vien',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './admin-sinh-vien.component.html',
   styleUrl: './admin-sinh-vien.component.scss',
 })
@@ -45,6 +46,9 @@ export class AdminSinhVienComponent implements OnInit {
   protected searchText = '';
   protected filterLopId = '';
   protected filterGender = '';
+
+  protected currentPage = 1;
+  protected pageSize = 10;
 
   protected editingId: number | null = null;
   protected loading = false;
@@ -111,6 +115,11 @@ export class AdminSinhVienComponent implements OnInit {
     });
   }
 
+  protected get paginatedSinhViens(): SinhVienItem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredSinhViens.slice(start, start + this.pageSize);
+  }
+
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -170,6 +179,9 @@ export class AdminSinhVienComponent implements OnInit {
       lopId: String(item.lopId),
       active: item.active,
     });
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.cd.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -205,6 +217,7 @@ export class AdminSinhVienComponent implements OnInit {
       lopId: '',
       active: true,
     });
+    this.cd.detectChanges();
   }
 
   protected getCohort(sv: SinhVienItem): string {

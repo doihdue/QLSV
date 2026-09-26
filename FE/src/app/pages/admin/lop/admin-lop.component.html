@@ -94,11 +94,12 @@
             <input
               type="text"
               [(ngModel)]="searchText"
+              (ngModelChange)="currentPage = 1"
               placeholder="Tìm theo mã lớp, tên lớp, cố vấn..."
             />
           </div>
 
-          <select [(ngModel)]="filterKhoaId" class="filter-select">
+          <select [(ngModel)]="filterKhoaId" (ngModelChange)="currentPage = 1" class="filter-select">
             <option value="">Tất cả các Khoa</option>
             @for (k of khoas; track k.id) {
               <option [value]="k.id">{{ k.tenKhoa }}</option>
@@ -130,7 +131,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (lop of filteredLops; track lop.id) {
+              @for (lop of paginatedLops; track lop.id) {
                 <tr>
                   <td>
                     <span class="code-badge">{{ lop.maLop }}</span>
@@ -155,6 +156,16 @@
             </tbody>
           </table>
         </div>
+
+        <app-pagination
+          [totalItems]="filteredLops.length"
+          [pageSize]="pageSize"
+          [currentPage]="currentPage"
+          [pageSizeOptions]="[5, 10, 15, 25, 50, 100]"
+          itemName="lớp hành chính"
+          (pageChange)="currentPage = $event"
+          (pageSizeChange)="pageSize = $event"
+        ></app-pagination>
       }
     </article>
   </div>

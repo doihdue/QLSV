@@ -142,9 +142,14 @@
       <div class="filters-row">
         <!-- Search box -->
         <div class="search-input-wrap">
-          <input type="text" [(ngModel)]="searchText" placeholder="Tìm kiếm theo MSSV, họ tên, lớp..." />
+          <input
+            type="text"
+            [(ngModel)]="searchText"
+            (ngModelChange)="currentPage = 1"
+            placeholder="Tìm kiếm theo MSSV, họ tên, lớp..."
+          />
           @if (searchText) {
-          <button type="button" class="clear-search-btn" (click)="searchText = ''">✕</button>
+          <button type="button" class="clear-search-btn" (click)="searchText = ''; currentPage = 1">✕</button>
           }
         </div>
 
@@ -162,7 +167,7 @@
         <!-- Grade Classification Filter -->
         <div class="filter-select-wrap">
           <label>Xếp loại:</label>
-          <select [(ngModel)]="selectedXepLoai">
+          <select [(ngModel)]="selectedXepLoai" (ngModelChange)="currentPage = 1">
             <option value="">Tất cả Xếp loại</option>
             <option value="Xuất sắc">Xuất sắc (>= 8.5)</option>
             <option value="Khá / Giỏi">Khá / Giỏi (7.0 - 8.49)</option>
@@ -175,7 +180,7 @@
         <!-- Sort selector -->
         <div class="filter-select-wrap">
           <label>Sắp xếp:</label>
-          <select [(ngModel)]="sortBy">
+          <select [(ngModel)]="sortBy" (ngModelChange)="currentPage = 1">
             <option value="gpa_desc">GPA cao nhất ↓</option>
             <option value="gpa_asc">GPA thấp nhất ↑</option>
             <option value="credits_desc">Tín chỉ tích lũy ↓</option>
@@ -196,7 +201,7 @@
       <h3>Không tìm thấy dữ liệu phù hợp</h3>
       <p>Không có kết quả nào thỏa mãn bộ lọc hiện tại.</p>
       <button type="button" class="btn-reset-filter"
-        (click)="selectedLopId = ''; selectedXepLoai = ''; searchText = ''; onLopChange()">
+        (click)="selectedLopId = ''; selectedXepLoai = ''; searchText = ''; currentPage = 1; onLopChange()">
         Xóa bộ lọc
       </button>
     </div>
@@ -217,11 +222,11 @@
           </tr>
         </thead>
         <tbody>
-          @for (sv of filteredData; track sv.sinhVienId; let i = $index) {
+          @for (sv of paginatedData; track sv.sinhVienId; let i = $index) {
           <tr>
             <!-- STT -->
             <td class="text-center text-muted">
-              {{ i + 1 }}
+              {{ (currentPage - 1) * pageSize + i + 1 }}
             </td>
 
             <!-- MSSV -->
@@ -270,6 +275,17 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Clear Pagination Bar -->
+    <app-pagination
+      [totalItems]="filteredData.length"
+      [pageSize]="pageSize"
+      [currentPage]="currentPage"
+      [pageSizeOptions]="[5, 10, 15, 25, 50, 100]"
+      itemName="sinh viên"
+      (pageChange)="currentPage = $event"
+      (pageSizeChange)="pageSize = $event"
+    ></app-pagination>
     }
   </div>
 </section>

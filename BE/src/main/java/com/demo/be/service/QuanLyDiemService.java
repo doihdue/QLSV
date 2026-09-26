@@ -3,6 +3,7 @@ package com.demo.be.service;
 import com.demo.be.dto.diem.AdminDuyetDiemRequest;
 import com.demo.be.dto.diem.LecturerGradeBatchRequest;
 import com.demo.be.dto.diem.LecturerGradeItemDto;
+import com.demo.be.dto.diem.LecturerGradeSaveRequest;
 import com.demo.be.dto.diem.PendingApprovalClassDto;
 import com.demo.be.dto.diem.QuanLyDiemRequest;
 import com.demo.be.dto.diem.QuanLyDiemResponse;
@@ -21,7 +22,9 @@ import com.demo.be.producer.NotificationProducer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -164,6 +167,54 @@ public class QuanLyDiemService {
     public List<LecturerGradeItemDto> saveGradesForMonHocMo(LecturerGradeBatchRequest request) {
         String targetTrangThai = request.submitForApproval() ? "CHO_DUYET" : "BAN_NHAP";
 
+        if (request.submitForApproval()) {
+            MonHocMo monHocMo = monHocMoRepository.findById(request.monHocMoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy môn học mở: " + request.monHocMoId()));
+
+            List<DangKyMonHoc> allRegistrations = getRegistrationsForMonHocMo(monHocMo);
+            if (allRegistrations.isEmpty()) {
+                throw new IllegalArgumentException("Lớp môn học này hiện chưa có sinh viên đăng ký để gửi duyệt.");
+            }
+
+            Map<Long, LecturerGradeSaveRequest> gradeMap = new HashMap<>();
+            if (request.grades() != null) {
+                for (var g : request.grades()) {
+                    if (g.dangKyMonHocId() != null) {
+                        gradeMap.put(g.dangKyMonHocId(), g);
+                    }
+                }
+            }
+
+            List<String> uncompleted = new ArrayList<>();
+            for (DangKyMonHoc reg : allRegistrations) {
+                LecturerGradeSaveRequest g = gradeMap.get(reg.getId());
+                boolean complete = g != null
+                        && g.diemChuyenCan() != null
+                        && g.diemGiuaKy() != null
+                        && g.diemCuoiKy() != null
+                        && g.diemChuyenCan().compareTo(BigDecimal.ZERO) >= 0 && g.diemChuyenCan().compareTo(BigDecimal.TEN) <= 0
+                        && g.diemGiuaKy().compareTo(BigDecimal.ZERO) >= 0 && g.diemGiuaKy().compareTo(BigDecimal.TEN) <= 0
+                        && g.diemCuoiKy().compareTo(BigDecimal.ZERO) >= 0 && g.diemCuoiKy().compareTo(BigDecimal.TEN) <= 0;
+
+                if (!complete) {
+                    String svName = reg.getSinhVien() != null ? reg.getSinhVien().getHoTen() : ("ĐK #" + reg.getId());
+                    String mssv = reg.getSinhVien() != null ? reg.getSinhVien().getMssv() : "";
+                    uncompleted.add(svName + " (" + mssv + ")");
+                }
+            }
+
+            if (!uncompleted.isEmpty()) {
+                String sample = String.join(", ", uncompleted.stream().limit(3).toList());
+                int rem = uncompleted.size() - 3;
+                String msg = "Không thể gửi duyệt: Lớp còn " + uncompleted.size() + " sinh viên chưa được nhập đủ điểm (ví dụ: " + sample;
+                if (rem > 0) {
+                    msg += " và " + rem + " sinh viên khác";
+                }
+                msg += "). Giảng viên cần hoàn thành đầy đủ điểm cho toàn bộ sinh viên trong lớp trước khi gửi phê duyệt.";
+                throw new IllegalArgumentException(msg);
+            }
+        }
+
         for (var item : request.grades()) {
             if (item.dangKyMonHocId() == null) continue;
             DangKyMonHoc reg = dangKyMonHocRepository.findById(item.dangKyMonHocId())
@@ -210,6 +261,7 @@ public class QuanLyDiemService {
         List<PendingApprovalClassDto> result = new ArrayList<>();
 
         for (MonHocMo m : allMo) {
+            if (m.getLop() == null) continue; // Phê duyệt điểm luôn theo từng lớp hành chính cụ thể
             List<DangKyMonHoc> regs = getRegistrationsForMonHocMo(m);
             if (regs.isEmpty()) continue;
 

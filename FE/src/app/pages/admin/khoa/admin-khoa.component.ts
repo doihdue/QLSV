@@ -3,10 +3,11 @@ import { Component, inject } from '@angular/core';
 import { ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Khoa, KhoaPayload, KhoaService } from '../../../services/khoa.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-admin-khoa',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './admin-khoa.component.html',
   styleUrl: './admin-khoa.component.scss',
 })
@@ -24,6 +25,8 @@ export class AdminKhoaComponent {
 
   protected khoas: Khoa[] = [];
   protected searchText = '';
+  protected currentPage = 1;
+  protected pageSize = 10;
   protected editingId: number | null = null;
   protected loading = false;
   protected saving = false;
@@ -61,6 +64,11 @@ export class AdminKhoaComponent {
         (k.moTa && k.moTa.toLowerCase().includes(q))
       );
     });
+  }
+
+  protected get paginatedKhoas(): Khoa[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredKhoas.slice(start, start + this.pageSize);
   }
 
   protected submit(): void {
@@ -103,6 +111,9 @@ export class AdminKhoaComponent {
       moTa: khoa.moTa ?? '',
       active: khoa.active,
     });
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.changeDetector.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -127,6 +138,7 @@ export class AdminKhoaComponent {
   protected resetForm(): void {
     this.editingId = null;
     this.form.reset({ maKhoa: '', tenKhoa: '', moTa: '', active: true });
+    this.changeDetector.detectChanges();
   }
 }
 

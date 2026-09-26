@@ -13,12 +13,13 @@ import {
   StudentProfile,
   StudentService,
 } from '../../services/student.service';
+import { PaginationComponent } from '../../components/pagination/pagination.component';
 
 export type PortalMode = 'profile' | 'registration' | 'grades';
 
 @Component({
   selector: 'app-student-portal',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, PaginationComponent],
   templateUrl: './student-portal.component.html',
   styleUrl: './student-portal.component.scss',
 })
@@ -56,12 +57,16 @@ export class StudentPortalComponent implements OnInit {
   protected registeringId: number | null = null;
   protected pendingCancelRegistration: Registration | null = null;
   protected cancelling = false;
+  protected coursePage = 1;
+  protected coursePageSize = 10;
 
   // Grade states
   protected gradeHocKy = '';
   protected gradeNamHoc = '';
   protected grades: Grade[] = [];
   protected showGradingScale = false;
+  protected gradePage = 1;
+  protected gradePageSize = 15;
 
   // Profile forms
   protected profile: StudentProfile | null = null;
@@ -196,7 +201,7 @@ export class StudentPortalComponent implements OnInit {
             this.loadRegistrationData();
           }
         }
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -213,12 +218,12 @@ export class StudentPortalComponent implements OnInit {
           diaChi: res.diaChi || '',
         });
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Không thể tải thông tin hồ sơ sinh viên.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -237,12 +242,12 @@ export class StudentPortalComponent implements OnInit {
         this.profile = updated;
         this.savingProfile = false;
         this.successMessage = 'Đã cập nhật thông tin liên hệ thành công.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: (err) => {
         this.savingProfile = false;
         this.errorMessage = err?.error?.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -270,12 +275,12 @@ export class StudentPortalComponent implements OnInit {
         this.changingPassword = false;
         this.passwordForm.reset();
         this.successMessage = 'Đổi mật khẩu thành công. Hãy ghi nhớ mật khẩu mới của bạn.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: (err) => {
         this.changingPassword = false;
         this.errorMessage = err?.error?.message || 'Mật khẩu cũ không đúng hoặc có lỗi xảy ra.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -283,6 +288,7 @@ export class StudentPortalComponent implements OnInit {
   // --- Registration methods ---
   protected loadRegistrationData(): void {
     this.loading = true;
+    this.coursePage = 1;
     this.errorMessage = '';
 
     forkJoin({
@@ -311,12 +317,12 @@ export class StudentPortalComponent implements OnInit {
           this.courses = [];
         }
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Không thể tải danh sách học phần và môn đã đăng ký.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -361,12 +367,12 @@ export class StudentPortalComponent implements OnInit {
         this.registrations = [res, ...this.registrations];
         this.registeringId = null;
         this.successMessage = `Đã đăng ký thành công môn học: ${course.tenMonHoc} (${course.soTinChi} TC).`;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: (err) => {
         this.registeringId = null;
         this.errorMessage = err?.error?.message || 'Không thể đăng ký môn học này. Vui lòng kiểm tra lại.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -407,13 +413,13 @@ export class StudentPortalComponent implements OnInit {
         this.cancelling = false;
         this.pendingCancelRegistration = null;
         this.successMessage = `Đã hủy đăng ký môn ${target.monHocTen} thành công.`;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: (err) => {
         this.cancelling = false;
         this.pendingCancelRegistration = null;
         this.errorMessage = err?.error?.message || 'Không thể hủy môn học. Có thể môn đã được ghi điểm.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -421,16 +427,17 @@ export class StudentPortalComponent implements OnInit {
   // --- Grade methods ---
   protected loadGrades(): void {
     this.loading = true;
+    this.gradePage = 1;
     this.studentService.getGrades(this.gradeHocKy, this.gradeNamHoc).subscribe({
       next: (res) => {
         this.grades = res;
         this.loading = false;
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
       error: () => {
         this.loading = false;
         this.errorMessage = 'Không thể tải bảng điểm kết quả học tập.';
-        this.cd.markForCheck();
+        this.cd.detectChanges();
       },
     });
   }
@@ -473,6 +480,16 @@ export class StudentPortalComponent implements OnInit {
         !this.selectedKhoaFilter || c.khoaTen === this.selectedKhoaFilter;
       return matchSearch && matchKhoa;
     });
+  }
+
+  protected get paginatedCourses(): Course[] {
+    const start = (this.coursePage - 1) * this.coursePageSize;
+    return this.filteredCourses.slice(start, start + this.coursePageSize);
+  }
+
+  protected get paginatedGrades(): Grade[] {
+    const start = (this.gradePage - 1) * this.gradePageSize;
+    return this.grades.slice(start, start + this.gradePageSize);
   }
 
   protected get availableDepartments(): string[] {

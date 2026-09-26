@@ -15,7 +15,11 @@ import com.demo.be.repository.LopRepository;
 import com.demo.be.repository.MonHocMoRepository;
 import com.demo.be.repository.MonHocRepository;
 import com.demo.be.repository.SinhVienRepository;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
@@ -202,23 +206,99 @@ public class MonHocMoService {
     public MonHocMoResponse ganGiangVien(Long id, Long giangVienId) {
         MonHocMo monHocMo = monHocMoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy môn học mở với ID: " + id));
+        GiangVien gv = null;
         if (giangVienId != null) {
-            var gv = giangVienRepository.findById(giangVienId)
+            gv = giangVienRepository.findById(giangVienId)
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giảng viên với ID: " + giangVienId));
             monHocMo.setGiangVien(gv);
         } else {
             monHocMo.setGiangVien(null);
         }
-        return toResponse(monHocMoRepository.save(monHocMo));
+        MonHocMo saved = monHocMoRepository.save(monHocMo);
+
+        // Nếu gán cho toàn khóa (lop == null), tự động đồng bộ cho từng lớp cụ thể
+        if (monHocMo.getLop() == null) {
+            List<Lop> allKhoaLops = lopRepository.findByKhoa_Id(monHocMo.getKhoa().getId());
+            String savedKhoaHoc = monHocMo.getKhoaHoc() != null ? monHocMo.getKhoaHoc().trim() : "";
+            for (Lop l : allKhoaLops) {
+                String lKhoa = extractKhoaHoc(l);
+                if (savedKhoaHoc.isBlank() || lKhoa.equals(savedKhoaHoc)
+                        || (l.getMaLop() != null && l.getMaLop().contains(savedKhoaHoc))) {
+                    var classMoOpt = monHocMoRepository.findFirstByMonHoc_IdAndLop_IdAndHocKyAndNamHoc(
+                            monHocMo.getMonHoc().getId(), l.getId(), monHocMo.getHocKy(), monHocMo.getNamHoc());
+                    if (classMoOpt.isPresent()) {
+                        MonHocMo classMo = classMoOpt.get();
+                        classMo.setGiangVien(gv);
+                        monHocMoRepository.save(classMo);
+                    } else {
+                        MonHocMo newClassMo = new MonHocMo(
+                                monHocMo.getMonHoc(), monHocMo.getKhoa(), savedKhoaHoc,
+                                monHocMo.getHocKy(), monHocMo.getNamHoc(), l, monHocMo.getGhiChu());
+                        newClassMo.setGiangVien(gv);
+                        monHocMoRepository.save(newClassMo);
+                    }
+                }
+            }
+        }
+
+        return toResponse(saved);
     }
 
+    @Transactional
     public List<MonHocMoResponse> findByGiangVien(String maGiangVien, String hocKy, String namHoc) {
+        List<MonHocMo> list;
         if (hocKy != null && !hocKy.isBlank() && namHoc != null && !namHoc.isBlank()) {
-            return monHocMoRepository.findByGiangVien_MaGiangVienAndHocKyAndNamHoc(maGiangVien, hocKy, namHoc)
-                    .stream().map(this::toResponse).toList();
+            list = monHocMoRepository.findByGiangVien_MaGiangVienAndHocKyAndNamHoc(maGiangVien, hocKy, namHoc);
+        } else {
+            list = monHocMoRepository.findByGiangVien_MaGiangVien(maGiangVien);
         }
-        return monHocMoRepository.findByGiangVien_MaGiangVien(maGiangVien)
-                .stream().map(this::toResponse).toList();
+
+        // Đảm bảo giảng viên luôn nhận danh sách lớp môn học theo từng LỚP HÀNH CHÍNH cụ thể (lop != null)
+        Map<String, MonHocMo> uniqueClassMap = new LinkedHashMap<>();
+
+        for (MonHocMo m : list) {
+            if (m.getLop() != null) {
+                String key = m.getMonHoc().getId() + "_" + m.getLop().getId() + "_" + m.getHocKy() + "_" + m.getNamHoc();
+                uniqueClassMap.put(key, m);
+            } else {
+                // Bản ghi lop == null (Toàn khóa): mở rộng ra các lớp con cụ thể
+                List<Lop> allKhoaLops = lopRepository.findByKhoa_Id(m.getKhoa().getId());
+                String savedKhoaHoc = m.getKhoaHoc() != null ? m.getKhoaHoc().trim() : "";
+                for (Lop l : allKhoaLops) {
+                    String lKhoa = extractKhoaHoc(l);
+                    if (savedKhoaHoc.isBlank() || lKhoa.equals(savedKhoaHoc)
+                            || (l.getMaLop() != null && l.getMaLop().contains(savedKhoaHoc))) {
+                        String key = m.getMonHoc().getId() + "_" + l.getId() + "_" + m.getHocKy() + "_" + m.getNamHoc();
+                        if (!uniqueClassMap.containsKey(key)) {
+                            var existingOpt = monHocMoRepository.findFirstByMonHoc_IdAndLop_IdAndHocKyAndNamHoc(
+                                    m.getMonHoc().getId(), l.getId(), m.getHocKy(), m.getNamHoc());
+                            if (existingOpt.isPresent()) {
+                                MonHocMo ex = existingOpt.get();
+                                if (ex.getGiangVien() == null) {
+                                    ex.setGiangVien(m.getGiangVien());
+                                    ex = monHocMoRepository.save(ex);
+                                }
+                                if (ex.getGiangVien() != null && ex.getGiangVien().getMaGiangVien().equals(maGiangVien)) {
+                                    uniqueClassMap.put(key, ex);
+                                }
+                            } else {
+                                MonHocMo newClassMo = new MonHocMo(
+                                        m.getMonHoc(), m.getKhoa(), savedKhoaHoc,
+                                        m.getHocKy(), m.getNamHoc(), l, m.getGhiChu());
+                                newClassMo.setGiangVien(m.getGiangVien());
+                                newClassMo = monHocMoRepository.save(newClassMo);
+                                uniqueClassMap.put(key, newClassMo);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return uniqueClassMap.values().stream()
+                .sorted(Comparator.comparing((MonHocMo a) -> a.getMonHoc() != null ? a.getMonHoc().getTenMonHoc() : "")
+                        .thenComparing(a -> a.getLop() != null ? a.getLop().getTenLop() : ""))
+                .map(this::toResponse).toList();
     }
 
     @Transactional

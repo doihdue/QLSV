@@ -1,0 +1,95 @@
+<nav class="pagination-bar" aria-label="Điều hướng phân trang" *ngIf="totalItems >= 0">
+  <!-- Info Summary -->
+  <div class="pagination-info" *ngIf="showInfo">
+    <span class="info-badge">
+      Hiển thị <strong>{{ startItem }}</strong> – <strong>{{ endItem }}</strong> trên tổng <strong>{{ totalItems }}</strong> {{ itemName }}
+    </span>
+  </div>
+
+  <!-- Pagination Controls & Size Picker -->
+  <div class="pagination-controls">
+    <!-- Page Size Selector -->
+    <div class="page-size-picker" *ngIf="showPageSize">
+      <label for="pageSizeSelect">Số dòng:</label>
+      <select
+        id="pageSizeSelect"
+        [ngModel]="pageSize"
+        (ngModelChange)="onSizeChange($event)"
+        class="size-select"
+      >
+        <option *ngFor="let opt of pageSizeOptions" [value]="opt">
+          {{ opt }} / trang
+        </option>
+      </select>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="page-btn-group">
+      <!-- First Page -->
+      <button
+        type="button"
+        class="btn-nav"
+        [disabled]="currentPage === 1"
+        (click)="firstPage()"
+        title="Trang đầu tiên"
+        aria-label="Trang đầu"
+      >
+        <span>«</span>
+      </button>
+
+      <!-- Previous Page -->
+      <button
+        type="button"
+        class="btn-nav"
+        [disabled]="currentPage === 1"
+        (click)="prevPage()"
+        title="Trang trước"
+        aria-label="Trang trước"
+      >
+        <span>‹</span>
+      </button>
+
+      <!-- Page Numbers / Ellipsis -->
+      <div class="page-numbers">
+        <ng-container *ngFor="let p of pages">
+          <span *ngIf="p === '...'" class="page-ellipsis">…</span>
+          <button
+            *ngIf="p !== '...'"
+            type="button"
+            class="btn-page"
+            [class.active]="p === currentPage"
+            [disabled]="totalPages <= 1"
+            (click)="changePage(p)"
+            [attr.aria-current]="p === currentPage ? 'page' : null"
+          >
+            {{ p }}
+          </button>
+        </ng-container>
+      </div>
+
+      <!-- Next Page -->
+      <button
+        type="button"
+        class="btn-nav"
+        [disabled]="currentPage >= totalPages"
+        (click)="nextPage()"
+        title="Trang tiếp theo"
+        aria-label="Trang tiếp theo"
+      >
+        <span>›</span>
+      </button>
+
+      <!-- Last Page -->
+      <button
+        type="button"
+        class="btn-nav"
+        [disabled]="currentPage >= totalPages"
+        (click)="lastPage()"
+        title="Trang cuối"
+        aria-label="Trang cuối"
+      >
+        <span>»</span>
+      </button>
+    </div>
+  </div>
+</nav>

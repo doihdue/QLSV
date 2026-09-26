@@ -37,13 +37,18 @@
             (click)="selectClass(cls)"
           >
             <div class="pill-top">
-              <span class="sub-code">{{ cls.monHocMa }}</span>
-              <span class="badge-credits">{{ cls.soTinChi }} tín chỉ</span>
+              <div class="code-and-credits">
+                <span class="sub-code">{{ cls.monHocMa }}</span>
+                <span class="badge-credits">{{ cls.soTinChi }} tín chỉ</span>
+              </div>
+              @if (selectedClass?.id === cls.id) {
+                <span class="badge-selected">✓ Đang chọn</span>
+              }
             </div>
-            <strong class="sub-name">{{ cls.tenMonHoc }}</strong>
+            <strong class="sub-name" [title]="cls.tenMonHoc">{{ cls.tenMonHoc }}</strong>
             <div class="pill-footer">
-              <span class="class-name">🏫 Lớp: <strong>{{ cls.tenLop || cls.maLop || 'Tất cả' }}</strong></span>
-              <span class="term-info">HK{{ cls.hocKy }} ({{ cls.namHoc }})</span>
+              <span class="class-name">🏫 Lớp: <strong>{{ cls.tenLop || cls.maLop }}</strong></span>
+              <span class="term-info">HK{{ cls.hocKy }} &bull; {{ cls.namHoc }}</span>
             </div>
           </div>
         }
@@ -58,7 +63,7 @@
         <div>
           <h2>Bảng điểm: {{ selectedClass.tenMonHoc }} ({{ selectedClass.monHocMa }})</h2>
           <p class="meta-desc">
-            Lớp: <strong>{{ selectedClass.tenLop || selectedClass.maLop || 'Tất cả sinh viên' }}</strong> |
+            Lớp: <strong>{{ selectedClass.tenLop || selectedClass.maLop }}</strong> |
             Học kỳ: <strong>{{ selectedClass.hocKy }}</strong> ({{ selectedClass.namHoc }}) |
             Sĩ số đăng ký: <strong>{{ students.length }} sinh viên</strong>
           </p>
@@ -97,6 +102,40 @@
         </div>
       }
 
+      @if (errorMessage) {
+        <div class="alert alert-danger">
+          <strong>Thông báo:</strong> {{ errorMessage }}
+        </div>
+      }
+
+      @if (successMessage) {
+        <div class="alert alert-success">
+          {{ successMessage }}
+        </div>
+      }
+
+      <!-- Progress indicator for grade entry -->
+      @if (students.length > 0 && !isLocked) {
+        <div class="grade-progress-bar" [class.all-completed]="incompleteCount === 0">
+          <div class="progress-info">
+            <span class="progress-title">Tiến độ nhập điểm:</span>
+            <strong>{{ completedCount }} / {{ students.length }}</strong> sinh viên đã hoàn thành ({{ completionPercent }}%)
+          </div>
+          @if (incompleteCount > 0) {
+            <div class="progress-warning">
+              <span class="warning-chip">⚠️ Còn {{ incompleteCount }} sinh viên chưa đủ điểm</span>
+              <button type="button" class="btn-jump-first" (click)="jumpToFirstIncomplete()" title="Nhảy tới sinh viên chưa nhập điểm đầu tiên">
+                🔍 Tìm sinh viên chưa nhập
+              </button>
+            </div>
+          } @else {
+            <div class="progress-success">
+              <span class="success-chip">✓ Đã nhập đủ 100% sinh viên. Sẵn sàng gửi duyệt!</span>
+            </div>
+          }
+        </div>
+      }
+
       @if (loadingStudents) {
         <div class="empty-state">Đang tải danh sách sinh viên...</div>
       } @else if (students.length === 0) {
@@ -119,9 +158,9 @@
               </tr>
             </thead>
             <tbody>
-              @for (item of students; track item.dangKyMonHocId; let idx = $index) {
-                <tr>
-                  <td class="text-center">{{ idx + 1 }}</td>
+              @for (item of paginatedStudents; track item.dangKyMonHocId; let idx = $index) {
+                <tr [class.row-incomplete]="isStudentIncomplete(item)">
+                  <td class="text-center">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
                   <td>
                     <span class="code-badge">{{ item.sinhVienMssv }}</span>
                   </td>
@@ -134,6 +173,7 @@
                       min="0"
                       max="10"
                       class="score-input"
+                      [class.input-missing]="submittedAttempt && isFieldMissing(item.diemChuyenCan)"
                       [(ngModel)]="item.diemChuyenCan"
                       [disabled]="isLocked"
                       (ngModelChange)="onScoreChange(item)"
@@ -147,6 +187,7 @@
                       min="0"
                       max="10"
                       class="score-input"
+                      [class.input-missing]="submittedAttempt && isFieldMissing(item.diemGiuaKy)"
                       [(ngModel)]="item.diemGiuaKy"
                       [disabled]="isLocked"
                       (ngModelChange)="onScoreChange(item)"
@@ -160,6 +201,7 @@
                       min="0"
                       max="10"
                       class="score-input"
+                      [class.input-missing]="submittedAttempt && isFieldMissing(item.diemCuoiKy)"
                       [(ngModel)]="item.diemCuoiKy"
                       [disabled]="isLocked"
                       (ngModelChange)="onScoreChange(item)"
@@ -187,6 +229,16 @@
           </table>
         </div>
 
+        <app-pagination
+          [totalItems]="students.length"
+          [pageSize]="pageSize"
+          [currentPage]="currentPage"
+          [pageSizeOptions]="[5, 10, 20, 30, 50, 100]"
+          itemName="sinh viên"
+          (pageChange)="currentPage = $event"
+          (pageSizeChange)="pageSize = $event"
+        ></app-pagination>
+
         @if (!isLocked) {
           <div class="sheet-actions">
             <button
@@ -203,7 +255,7 @@
               (click)="save(true)"
               [disabled]="saving"
             >
-              🚀 {{ saving ? 'Đang xử lý...' : 'Gửi Admin duyệt bảng điểm' }}
+              🚀 {{ saving ? 'Đang xử lý...' : ('Gửi Admin duyệt lớp ' + (selectedClass.tenLop || selectedClass.maLop || 'này')) }}
             </button>
           </div>
         }

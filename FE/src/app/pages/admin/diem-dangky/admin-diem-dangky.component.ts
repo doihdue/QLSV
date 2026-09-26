@@ -6,6 +6,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { MonHocMo } from '../../../services/student.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 
 export type MonHocOption = {
   id: number;
@@ -66,7 +67,7 @@ export type DangKyItem = {
 
 @Component({
   selector: 'app-admin-diem-dangky',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginationComponent],
   templateUrl: './admin-diem-dangky.component.html',
   styleUrl: './admin-diem-dangky.component.scss',
 })
@@ -98,12 +99,16 @@ export class AdminDiemDangKyComponent implements OnInit {
   protected pendingClassStudents: any[] = [];
   protected loadingPending = false;
   protected loadingPendingDetails = false;
+  protected pendingPage = 1;
+  protected pendingPageSize = 15;
 
   // Tab: Quản lý đăng ký filters
   protected filterRegHocKy: string = '1';
   protected filterRegNamHoc: string = '2026-2027';
   protected filterRegMonHocId: string = '';
   protected searchRegStudent: string = '';
+  protected regPage = 1;
+  protected regPageSize = 15;
 
   // Tab: Mở môn theo Khóa & Lớp hành chính filters
   protected moNamHoc: string = '2026-2027';
@@ -112,6 +117,8 @@ export class AdminDiemDangKyComponent implements OnInit {
   protected moKhoaHoc: string = '2023';
   protected moLopId: string = '';
   protected monHocMoList: MonHocMo[] = [];
+  protected moPage = 1;
+  protected moPageSize = 15;
 
   // Modal: Mở môn theo Khoa & Khóa
   protected showAddMoModal = false;
@@ -173,6 +180,7 @@ export class AdminDiemDangKyComponent implements OnInit {
     this.loadCurrentDot();
     this.refreshAllData();
     this.loadPendingClasses();
+    this.loadMonHocMoList();
   }
 
   private sanitizeDot<T extends { hocKy: string; namHoc: string; tenDot: string } | null>(dot: T): T {
@@ -305,6 +313,8 @@ export class AdminDiemDangKyComponent implements OnInit {
     this.activeTab = tab;
     if (tab === 'duyet') {
       this.loadPendingClasses();
+    } else if (tab === 'dangky') {
+      this.refreshAllData();
     } else if (tab === 'monhocmo') {
       this.loadMonHocMoList();
     }
@@ -338,7 +348,9 @@ export class AdminDiemDangKyComponent implements OnInit {
 
   protected viewPendingClass(cls: any): void {
     this.selectedPendingClass = cls;
+    this.pendingPage = 1;
     this.loadingPendingDetails = true;
+    this.cd.detectChanges();
     this.http.get<any>(`http://localhost:8080/api/admin/duyet-diem/chi-tiet/${cls.monHocMoId}`).subscribe({
       next: (res) => {
         const list = Array.isArray(res) ? res : (res?.students || []);
@@ -358,6 +370,11 @@ export class AdminDiemDangKyComponent implements OnInit {
         this.cd.detectChanges();
       },
     });
+  }
+
+  protected get paginatedPendingClassStudents(): any[] {
+    const start = (this.pendingPage - 1) * this.pendingPageSize;
+    return this.pendingClassStudents.slice(start, start + this.pendingPageSize);
   }
 
   protected approvePendingClass(cls: any): void {
@@ -429,6 +446,11 @@ export class AdminDiemDangKyComponent implements OnInit {
         r.monHocMa.toLowerCase().includes(q);
       return matchHk && matchNh && matchMon && matchSearch;
     });
+  }
+
+  protected get paginatedRegistrations(): DangKyItem[] {
+    const start = (this.regPage - 1) * this.regPageSize;
+    return this.filteredRegistrations.slice(start, start + this.regPageSize);
   }
 
   protected openAddRegistrationModal(): void {
@@ -549,6 +571,7 @@ export class AdminDiemDangKyComponent implements OnInit {
 
   // ==================== MỞ MÔN THEO KHÓA & PHÂN CÔNG THEO LỚP ====================
   protected loadMonHocMoList(): void {
+    this.moPage = 1;
     if (this.moLopId) {
       const params: any = {
         hocKy: this.moHocKy,
@@ -584,6 +607,11 @@ export class AdminDiemDangKyComponent implements OnInit {
         this.cd.detectChanges();
       },
     });
+  }
+
+  protected get paginatedMonHocMoList(): MonHocMo[] {
+    const start = (this.moPage - 1) * this.moPageSize;
+    return this.monHocMoList.slice(start, start + this.moPageSize);
   }
 
   protected get filteredMonHocsForMo(): MonHocOption[] {
