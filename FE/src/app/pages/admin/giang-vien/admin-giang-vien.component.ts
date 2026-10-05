@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
 import { ToastService } from '../../../services/toast.service';
@@ -50,6 +50,7 @@ export class AdminGiangVienComponent implements OnInit {
 
   protected readonly hocViOptions = ['Cử nhân', 'Kỹ sư', 'Thạc sĩ', 'Tiến sĩ', 'Phó Giáo sư', 'Giáo sư'];
 
+  protected showModal = false;
   protected editingId: number | null = null;
   protected loading = false;
   protected saving = false;
@@ -176,7 +177,7 @@ export class AdminGiangVienComponent implements OnInit {
           : 'Cập nhật giảng viên thành công!';
         this.toastService.success(msg, 'Quản lý Giảng viên');
         this.loadGiangViens();
-        this.resetForm();
+        this.closeModal();
       },
       error: (err) => {
         this.saving = false;
@@ -187,7 +188,21 @@ export class AdminGiangVienComponent implements OnInit {
     });
   }
 
-  protected edit(item: GiangVienItem): void {
+  @HostListener('window:keydown.escape')
+  protected onEscape(): void {
+    if (this.showModal && !this.saving) {
+      this.closeModal();
+    }
+  }
+
+  protected openCreateModal(): void {
+    this.resetForm();
+    this.editingId = null;
+    this.showModal = true;
+    this.cd.detectChanges();
+  }
+
+  protected openEditModal(item: GiangVienItem): void {
     this.editingId = item.id;
     this.form.setValue({
       maGiangVien: item.maGiangVien,
@@ -199,8 +214,17 @@ export class AdminGiangVienComponent implements OnInit {
       khoaId: String(item.khoaId),
       active: item.active,
     });
+    this.showModal = true;
     this.cd.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected closeModal(): void {
+    this.showModal = false;
+    this.resetForm();
+  }
+
+  protected edit(item: GiangVienItem): void {
+    this.openEditModal(item);
   }
 
   protected async remove(item: GiangVienItem): Promise<void> {

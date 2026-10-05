@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
 import { ToastService } from '../../../services/toast.service';
@@ -49,6 +49,7 @@ export class AdminMonHocComponent implements OnInit {
   protected currentPage = 1;
   protected pageSize = 15;
 
+  protected showModal = false;
   protected editingId: number | null = null;
   protected loading = false;
   protected saving = false;
@@ -171,7 +172,7 @@ export class AdminMonHocComponent implements OnInit {
           : 'Cập nhật môn học thành công!';
         this.toastService.success(msg, 'Quản lý Môn học');
         this.loadMonHocs();
-        this.resetForm();
+        this.closeModal();
       },
       error: (err) => {
         this.saving = false;
@@ -182,7 +183,21 @@ export class AdminMonHocComponent implements OnInit {
     });
   }
 
-  protected edit(item: MonHocItem): void {
+  @HostListener('window:keydown.escape')
+  protected onEscape(): void {
+    if (this.showModal && !this.saving) {
+      this.closeModal();
+    }
+  }
+
+  protected openCreateModal(): void {
+    this.resetForm();
+    this.editingId = null;
+    this.showModal = true;
+    this.cd.detectChanges();
+  }
+
+  protected openEditModal(item: MonHocItem): void {
     this.editingId = item.id;
     this.form.setValue({
       maMonHoc: item.maMonHoc,
@@ -195,8 +210,17 @@ export class AdminMonHocComponent implements OnInit {
       moTa: item.moTa || '',
       active: item.active,
     });
+    this.showModal = true;
     this.cd.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected closeModal(): void {
+    this.showModal = false;
+    this.resetForm();
+  }
+
+  protected edit(item: MonHocItem): void {
+    this.openEditModal(item);
   }
 
   protected async remove(item: MonHocItem): Promise<void> {

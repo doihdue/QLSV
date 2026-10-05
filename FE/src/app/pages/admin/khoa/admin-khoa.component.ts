@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, HostListener, inject } from '@angular/core';
 import { ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Khoa, KhoaPayload, KhoaService } from '../../../services/khoa.service';
@@ -31,6 +31,7 @@ export class AdminKhoaComponent {
   protected searchText = '';
   protected currentPage = 1;
   protected pageSize = 10;
+  protected showModal = false;
   protected editingId: number | null = null;
   protected loading = false;
   protected saving = false;
@@ -121,7 +122,7 @@ export class AdminKhoaComponent {
         this.khoas = this.editingId === null
           ? [...this.khoas, savedKhoa]
           : this.khoas.map((khoa) => (khoa.id === savedKhoa.id ? savedKhoa : khoa));
-        this.resetForm();
+        this.closeModal();
         this.changeDetector.detectChanges();
       },
       error: (err) => {
@@ -133,7 +134,21 @@ export class AdminKhoaComponent {
     });
   }
 
-  protected edit(khoa: Khoa): void {
+  @HostListener('window:keydown.escape')
+  protected onEscape(): void {
+    if (this.showModal && !this.saving) {
+      this.closeModal();
+    }
+  }
+
+  protected openCreateModal(): void {
+    this.resetForm();
+    this.editingId = null;
+    this.showModal = true;
+    this.changeDetector.detectChanges();
+  }
+
+  protected openEditModal(khoa: Khoa): void {
     this.editingId = khoa.id;
     this.form.setValue({
       maKhoa: khoa.maKhoa,
@@ -141,8 +156,17 @@ export class AdminKhoaComponent {
       moTa: khoa.moTa ?? '',
       active: khoa.active,
     });
+    this.showModal = true;
     this.changeDetector.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected closeModal(): void {
+    this.showModal = false;
+    this.resetForm();
+  }
+
+  protected edit(khoa: Khoa): void {
+    this.openEditModal(khoa);
   }
 
   protected async remove(khoa: Khoa): Promise<void> {

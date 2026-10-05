@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
 import { ToastService } from '../../../services/toast.service';
@@ -54,6 +54,7 @@ export class AdminSinhVienComponent implements OnInit {
   protected currentPage = 1;
   protected pageSize = 10;
 
+  protected showModal = false;
   protected editingId: number | null = null;
   protected loading = false;
   protected saving = false;
@@ -217,7 +218,7 @@ export class AdminSinhVienComponent implements OnInit {
           : 'Cập nhật thông tin sinh viên thành công!';
         this.toastService.success(msg, 'Quản lý Sinh viên');
         this.loadSinhViens();
-        this.resetForm();
+        this.closeModal();
       },
       error: (err) => {
         this.saving = false;
@@ -228,7 +229,21 @@ export class AdminSinhVienComponent implements OnInit {
     });
   }
 
-  protected edit(item: SinhVienItem): void {
+  @HostListener('window:keydown.escape')
+  protected onEscape(): void {
+    if (this.showModal && !this.saving) {
+      this.closeModal();
+    }
+  }
+
+  protected openCreateModal(): void {
+    this.resetForm();
+    this.editingId = null;
+    this.showModal = true;
+    this.cd.detectChanges();
+  }
+
+  protected openEditModal(item: SinhVienItem): void {
     this.editingId = item.id;
     this.form.setValue({
       mssv: item.mssv,
@@ -242,8 +257,17 @@ export class AdminSinhVienComponent implements OnInit {
       lopId: String(item.lopId),
       active: item.active,
     });
+    this.showModal = true;
     this.cd.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected closeModal(): void {
+    this.showModal = false;
+    this.resetForm();
+  }
+
+  protected edit(item: SinhVienItem): void {
+    this.openEditModal(item);
   }
 
   protected async remove(item: SinhVienItem): Promise<void> {

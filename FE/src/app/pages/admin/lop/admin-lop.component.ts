@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
 import { ToastService } from '../../../services/toast.service';
@@ -45,6 +45,7 @@ export class AdminLopComponent implements OnInit {
   protected currentPage = 1;
   protected pageSize = 15;
 
+  protected showModal = false;
   protected editingId: number | null = null;
   protected loading = false;
   protected saving = false;
@@ -156,7 +157,7 @@ export class AdminLopComponent implements OnInit {
         const msg = this.editingId === null ? 'Thêm mới lớp học thành công!' : 'Cập nhật lớp học thành công!';
         this.toastService.success(msg, 'Quản lý Lớp');
         this.loadLops();
-        this.resetForm();
+        this.closeModal();
       },
       error: (err) => {
         this.saving = false;
@@ -167,7 +168,21 @@ export class AdminLopComponent implements OnInit {
     });
   }
 
-  protected edit(item: LopItem): void {
+  @HostListener('window:keydown.escape')
+  protected onEscape(): void {
+    if (this.showModal && !this.saving) {
+      this.closeModal();
+    }
+  }
+
+  protected openCreateModal(): void {
+    this.resetForm();
+    this.editingId = null;
+    this.showModal = true;
+    this.cd.detectChanges();
+  }
+
+  protected openEditModal(item: LopItem): void {
     this.editingId = item.id;
     this.form.setValue({
       maLop: item.maLop,
@@ -177,8 +192,17 @@ export class AdminLopComponent implements OnInit {
       khoaId: String(item.khoaId),
       active: item.active,
     });
+    this.showModal = true;
     this.cd.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected closeModal(): void {
+    this.showModal = false;
+    this.resetForm();
+  }
+
+  protected edit(item: LopItem): void {
+    this.openEditModal(item);
   }
 
   protected async remove(item: LopItem): Promise<void> {

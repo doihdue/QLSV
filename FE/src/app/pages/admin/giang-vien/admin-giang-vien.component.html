@@ -7,184 +7,194 @@
     </div>
     <div class="header-actions">
       <button type="button" class="secondary-button" (click)="loadGiangViens()">⟳ Làm mới</button>
+      <button type="button" class="primary-button" (click)="openCreateModal()">
+        <span>+</span> Thêm mới giảng viên
+      </button>
     </div>
   </header>
 
   <div class="tip-banner">
     <span class="tip-icon">💡</span>
     <span>
-      Hệ thống tự động sinh: Mã giảng viên dạng <strong>GV + [Mã khoa] + 001 tăng dần</strong> (VD: <code>GVCNTT001</code>) và Email dạng <strong>[tên][họ đệm].[Mã GV]&#64;stu.edu.vn</strong> (VD: <code>duedm.GVCNTT001&#64;stu.edu.vn</code>) khi thêm mới. Mật khẩu đăng nhập mặc định: <code>gv123456</code>.
+      Hệ thống tự động sinh: Mã giảng viên dạng <strong>GV + [Mã khoa] + 001 tăng dần</strong> (VD: <code>GVCNTT001</code>) và Email dạng <strong>[tên][họ đệm].[Mã GV]&#64;stu.edu.vn</strong> (VD: <code>duedm.GVCNTT001&#64;stu.edu.vn</code>) khi thêm mới. Mật khẩu mặc định: <code>gv123456</code>.
     </span>
   </div>
 
+  <!-- Full-Width Table Card -->
+  <article class="table-card">
+    <div class="table-toolbar">
+      <div class="filter-group">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchText"
+            (ngModelChange)="currentPage = 1"
+            placeholder="Tìm theo mã GV, họ tên, email, chuyên môn..."
+          />
+        </div>
 
+        <select [(ngModel)]="filterKhoaId" (ngModelChange)="currentPage = 1" class="filter-select">
+          <option value="">Tất cả các Khoa</option>
+          @for (k of khoas; track k.id) {
+            <option [value]="k.id">{{ k.tenKhoa }}</option>
+          }
+        </select>
 
-  <div class="admin-layout">
-    <!-- Form Panel -->
-    <aside class="form-card">
-      <div class="form-header">
-        <h3>{{ editingId === null ? 'Thêm mới giảng viên' : 'Cập nhật giảng viên' }}</h3>
-        <p>{{ editingId === null ? 'Điền hồ sơ cán bộ giảng viên' : 'Chỉnh sửa thông tin giảng viên đã chọn' }}</p>
+        <select [(ngModel)]="filterHocVi" (ngModelChange)="currentPage = 1" class="filter-select">
+          <option value="">Tất cả học vị</option>
+          @for (hv of hocViOptions; track hv) {
+            <option [value]="hv">{{ hv }}</option>
+          }
+        </select>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="form-group">
-          <label>Khoa trực thuộc <span class="req">*</span></label>
-          <select formControlName="khoaId" [class.is-invalid]="isControlInvalid('khoaId')">
-            <option value="">-- Chọn Khoa --</option>
-            @for (k of khoas; track k.id) {
-              <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
-            }
-          </select>
-          @if (isControlInvalid('khoaId')) {
-            <small class="error-text">Vui lòng chọn Khoa công tác.</small>
-          }
-        </div>
-
-        <div class="form-group">
-          <label>Họ và tên <span class="req">*</span></label>
-          <input type="text" formControlName="hoTen" [class.is-invalid]="isControlInvalid('hoTen')" placeholder="VD: Đỗ Minh Duệ" />
-          @if (isControlInvalid('hoTen')) {
-            <small class="error-text">Họ tên là bắt buộc.</small>
-          }
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Học vị <span class="req">*</span></label>
-            <select formControlName="hocVi">
-              @for (hv of hocViOptions; track hv) {
-                <option [value]="hv">{{ hv }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Số điện thoại</label>
-            <input type="text" formControlName="soDienThoai" placeholder="0901234567" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Chuyên môn / Hướng nghiên cứu</label>
-          <input type="text" formControlName="chuyenMon" placeholder="VD: Trí tuệ nhân tạo, Mạng máy tính" />
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-container">
-            <input type="checkbox" formControlName="active" />
-            <span>Đang công tác giảng dạy (Hoạt động)</span>
-          </label>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="primary-button" [disabled]="saving">
-            {{ saving ? 'Đang lưu...' : editingId === null ? 'Thêm mới' : 'Lưu cập nhật' }}
-          </button>
-          @if (editingId !== null) {
-            <button type="button" class="cancel-button" (click)="resetForm()">Hủy sửa</button>
-          }
-        </div>
-      </form>
-    </aside>
-
-    <!-- Table List Panel -->
-    <article class="table-card">
-      <div class="table-toolbar">
-        <div class="filter-group">
-          <div class="search-input-wrap">
-            <span class="search-icon">🔍</span>
-            <input
-              type="text"
-              [(ngModel)]="searchText"
-              (ngModelChange)="currentPage = 1"
-              placeholder="Tìm theo mã GV, họ tên, email, chuyên môn..."
-            />
-          </div>
-
-          <select [(ngModel)]="filterKhoaId" (ngModelChange)="currentPage = 1" class="filter-select">
-            <option value="">Tất cả các Khoa</option>
-            @for (k of khoas; track k.id) {
-              <option [value]="k.id">{{ k.tenKhoa }}</option>
-            }
-          </select>
-
-          <select [(ngModel)]="filterHocVi" (ngModelChange)="currentPage = 1" class="filter-select">
-            <option value="">Tất cả học vị</option>
-            @for (hv of hocViOptions; track hv) {
-              <option [value]="hv">{{ hv }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="list-summary">
-          <span>Tổng số: <strong>{{ filteredGiangViens.length }}</strong> giảng viên</span>
-        </div>
+      <div class="list-summary">
+        <span>Tổng số: <strong>{{ filteredGiangViens.length }}</strong> giảng viên</span>
       </div>
+    </div>
 
-      @if (loading) {
-        <div class="empty-state">Đang tải danh sách giảng viên...</div>
-      } @else if (filteredGiangViens.length === 0) {
-        <div class="empty-state">Không tìm thấy giảng viên nào phù hợp.</div>
-      } @else {
-        <div class="table-container">
-          <table>
-            <thead>
+    @if (loading) {
+      <div class="empty-state">Đang tải danh sách giảng viên...</div>
+    } @else if (filteredGiangViens.length === 0) {
+      <div class="empty-state">Không tìm thấy giảng viên nào phù hợp.</div>
+    } @else {
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã GV</th>
+              <th>Họ và tên</th>
+              <th>Học vị</th>
+              <th>Khoa công tác</th>
+              <th>Chuyên môn</th>
+              <th>Email</th>
+              <th>SĐT</th>
+              <th>Trạng thái</th>
+              <th class="text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (gv of paginatedGiangViens; track gv.id) {
               <tr>
-                <th>Mã GV</th>
-                <th>Họ và tên</th>
-                <th>Học vị</th>
-                <th>Khoa</th>
-                <th>Email</th>
-                <th>Số điện thoại</th>
-                <th>Chuyên môn</th>
-                <th>Trạng thái</th>
-                <th class="text-right">Thao tác</th>
+                <td>
+                  <span class="code-badge">{{ gv.maGiangVien }}</span>
+                </td>
+                <td>
+                  <strong>{{ gv.hoTen }}</strong>
+                </td>
+                <td>
+                  <span class="badge-subtle">{{ gv.hocVi || '-' }}</span>
+                </td>
+                <td>{{ gv.khoaTen || '-' }}</td>
+                <td>{{ gv.chuyenMon || '-' }}</td>
+                <td>
+                  <span class="user-email-text">{{ gv.email }}</span>
+                </td>
+                <td>{{ gv.soDienThoai || '-' }}</td>
+                <td>
+                  <span [class]="gv.active ? 'badge-active' : 'badge-inactive'">
+                    {{ gv.active ? 'Hoạt động' : 'Tạm khóa' }}
+                  </span>
+                </td>
+                <td class="text-right actions-cell">
+                  <button type="button" class="btn-edit" (click)="openEditModal(gv)">Sửa</button>
+                  <button type="button" class="btn-delete" (click)="remove(gv)">Xóa</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @for (gv of paginatedGiangViens; track gv.id) {
-                <tr>
-                  <td>
-                    <span class="code-badge">{{ gv.maGiangVien }}</span>
-                  </td>
-                  <td>
-                    <strong>{{ gv.hoTen }}</strong>
-                  </td>
-                  <td>
-                    {{ gv.hocVi || 'Giảng viên' }}
-                  </td>
-                  <td>{{ gv.khoaTen || '-' }}</td>
-                  <td>
-                    <a [href]="'mailto:' + gv.email" class="email-link">{{ gv.email }}</a>
-                  </td>
-                  <td>{{ gv.soDienThoai || '-' }}</td>
-                  <td>{{ gv.chuyenMon || '-' }}</td>
-                  <td>
-                    <span [class]="gv.active ? 'badge-active' : 'badge-inactive'">
-                      {{ gv.active ? 'Đang dạy' : 'Nghỉ' }}
-                    </span>
-                  </td>
-                  <td class="text-right actions-cell">
-                    <button type="button" class="btn-edit" (click)="edit(gv)">Sửa</button>
-                    <button type="button" class="btn-delete" (click)="remove(gv)">Xóa</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        [totalItems]="filteredGiangViens.length"
+        [pageSize]="pageSize"
+        [currentPage]="currentPage"
+        [pageSizeOptions]="[5, 10, 15, 25, 50, 100]"
+        itemName="giảng viên"
+        (pageChange)="currentPage = $event"
+        (pageSizeChange)="pageSize = $event"
+      ></app-pagination>
+    }
+  </article>
+
+  <!-- Modal Dialog Thêm mới / Cập nhật Giảng viên -->
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-dialog modal-md" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h3>{{ editingId === null ? 'Thêm mới giảng viên' : 'Cập nhật giảng viên' }}</h3>
+            <p>{{ editingId === null ? 'Điền hồ sơ cán bộ giảng viên mới' : 'Chỉnh sửa thông tin giảng viên đã chọn' }}</p>
+          </div>
+          <button type="button" class="btn-close" (click)="closeModal()" title="Đóng">✕</button>
         </div>
 
-        <app-pagination
-          [totalItems]="filteredGiangViens.length"
-          [pageSize]="pageSize"
-          [currentPage]="currentPage"
-          [pageSizeOptions]="[5, 10, 15, 25, 50, 100]"
-          itemName="giảng viên"
-          (pageChange)="currentPage = $event"
-          (pageSizeChange)="pageSize = $event"
-        ></app-pagination>
-      }
-    </article>
-  </div>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-dialog-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Khoa trực thuộc <span class="req">*</span></label>
+              <select formControlName="khoaId" [class.is-invalid]="isControlInvalid('khoaId')">
+                <option value="">-- Chọn Khoa --</option>
+                @for (k of khoas; track k.id) {
+                  <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
+                }
+              </select>
+              @if (isControlInvalid('khoaId')) {
+                <small class="error-text">Vui lòng chọn Khoa công tác.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Họ và tên <span class="req">*</span></label>
+              <input type="text" formControlName="hoTen" [class.is-invalid]="isControlInvalid('hoTen')" placeholder="VD: TS. Nguyễn Văn A" />
+              @if (isControlInvalid('hoTen')) {
+                <small class="error-text">Họ tên là bắt buộc.</small>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Học vị <span class="req">*</span></label>
+                <select formControlName="hocVi">
+                  @for (hv of hocViOptions; track hv) {
+                    <option [value]="hv">{{ hv }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="text" formControlName="soDienThoai" placeholder="0901234567" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Chuyên môn / Hướng nghiên cứu</label>
+              <input type="text" formControlName="chuyenMon" placeholder="VD: Trí tuệ nhân tạo, Mạng máy tính" />
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-container">
+                <input type="checkbox" formControlName="active" />
+                <span>Đang công tác giảng dạy (Hoạt động)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" (click)="closeModal()">Hủy bỏ</button>
+            <button type="submit" class="primary-button" [disabled]="saving">
+              @if (saving) {
+                <span>Đang lưu...</span>
+              } @else {
+                <span>{{ editingId === null ? '✓ Thêm mới' : '✓ Lưu cập nhật' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </section>

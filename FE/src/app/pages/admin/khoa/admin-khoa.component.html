@@ -7,130 +7,140 @@
     </div>
     <div class="header-actions">
       <button type="button" class="secondary-button" (click)="loadKhoas()">⟳ Làm mới</button>
+      <button type="button" class="primary-button" (click)="openCreateModal()">
+        <span>+</span> Thêm mới Khoa
+      </button>
     </div>
   </header>
 
-
-
-  <div class="admin-layout">
-    <!-- Form Panel -->
-    <aside class="form-card">
-      <div class="form-header">
-        <h3>{{ editingId === null ? 'Thêm mới Khoa' : 'Cập nhật Khoa' }}</h3>
-        <p>{{ editingId === null ? 'Khai báo đơn vị khoa mới' : 'Chỉnh sửa thông tin khoa đã chọn' }}</p>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="form-group">
-          <label>Mã khoa <span class="req">*</span></label>
-          <input type="text" formControlName="maKhoa" [class.is-invalid]="isControlInvalid('maKhoa')" placeholder="VD: CNTT, DTVT, KTXD" />
-          @if (isControlInvalid('maKhoa')) {
-            <small class="error-text">Mã khoa là bắt buộc (tối đa 20 ký tự).</small>
-          }
-        </div>
-
-        <div class="form-group">
-          <label>Tên khoa <span class="req">*</span></label>
-          <input type="text" formControlName="tenKhoa" [class.is-invalid]="isControlInvalid('tenKhoa')" placeholder="VD: Công nghệ thông tin" />
-          @if (isControlInvalid('tenKhoa')) {
-            <small class="error-text">Tên khoa là bắt buộc.</small>
-          }
-        </div>
-
-        <div class="form-group">
-          <label>Mô tả đơn vị</label>
-          <textarea formControlName="moTa" rows="3" placeholder="Mô tả ngành đào tạo, định hướng..."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-container">
-            <input type="checkbox" formControlName="active" />
-            <span>Trạng thái hoạt động</span>
-          </label>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="primary-button" [disabled]="saving">
-            {{ saving ? 'Đang lưu...' : editingId === null ? 'Thêm mới' : 'Lưu cập nhật' }}
-          </button>
-          @if (editingId !== null) {
-            <button type="button" class="cancel-button" (click)="resetForm()">Hủy sửa</button>
-          }
-        </div>
-      </form>
-    </aside>
-
-    <!-- Table List Panel -->
-    <article class="table-card">
-      <div class="table-toolbar">
-        <div class="filter-group">
-          <div class="search-input-wrap">
-            <span class="search-icon">🔍</span>
-            <input
-              type="text"
-              [(ngModel)]="searchText"
-              (ngModelChange)="currentPage = 1"
-              placeholder="Tìm theo mã khoa, tên khoa, mô tả..."
-            />
-          </div>
-        </div>
-
-        <div class="list-summary">
-          <span>Tổng số: <strong>{{ filteredKhoas.length }}</strong> khoa</span>
+  <!-- Full-Width Table Card -->
+  <article class="table-card">
+    <div class="table-toolbar">
+      <div class="filter-group">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchText"
+            (ngModelChange)="currentPage = 1"
+            placeholder="Tìm theo mã khoa, tên khoa, mô tả..."
+          />
         </div>
       </div>
 
-      @if (loading) {
-        <div class="empty-state">Đang tải danh sách khoa...</div>
-      } @else if (filteredKhoas.length === 0) {
-        <div class="empty-state">Không tìm thấy khoa nào phù hợp.</div>
-      } @else {
-        <div class="table-container">
-          <table>
-            <thead>
+      <div class="list-summary">
+        <span>Tổng số: <strong>{{ filteredKhoas.length }}</strong> khoa</span>
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="empty-state">Đang tải danh sách khoa...</div>
+    } @else if (filteredKhoas.length === 0) {
+      <div class="empty-state">Không tìm thấy khoa nào phù hợp.</div>
+    } @else {
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã khoa</th>
+              <th>Tên khoa</th>
+              <th>Mô tả</th>
+              <th>Trạng thái</th>
+              <th class="text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (khoa of paginatedKhoas; track khoa.id) {
               <tr>
-                <th>Mã khoa</th>
-                <th>Tên khoa</th>
-                <th>Mô tả</th>
-                <th>Trạng thái</th>
-                <th class="text-right">Thao tác</th>
+                <td>
+                  <span class="code-badge">{{ khoa.maKhoa }}</span>
+                </td>
+                <td>
+                  <strong>{{ khoa.tenKhoa }}</strong>
+                </td>
+                <td>{{ khoa.moTa || '-' }}</td>
+                <td>
+                  <span [class]="khoa.active ? 'badge-active' : 'badge-inactive'">
+                    {{ khoa.active ? 'Hoạt động' : 'Khóa' }}
+                  </span>
+                </td>
+                <td class="text-right actions-cell">
+                  <button type="button" class="btn-edit" (click)="openEditModal(khoa)">Sửa</button>
+                  <button type="button" class="btn-delete" (click)="remove(khoa)">Xóa</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @for (khoa of paginatedKhoas; track khoa.id) {
-                <tr>
-                  <td>
-                    <span class="code-badge">{{ khoa.maKhoa }}</span>
-                  </td>
-                  <td>
-                    <strong>{{ khoa.tenKhoa }}</strong>
-                  </td>
-                  <td>{{ khoa.moTa || '-' }}</td>
-                  <td>
-                    <span [class]="khoa.active ? 'badge-active' : 'badge-inactive'">
-                      {{ khoa.active ? 'Hoạt động' : 'Khóa' }}
-                    </span>
-                  </td>
-                  <td class="text-right actions-cell">
-                    <button type="button" class="btn-edit" (click)="edit(khoa)">Sửa</button>
-                    <button type="button" class="btn-delete" (click)="remove(khoa)">Xóa</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        [totalItems]="filteredKhoas.length"
+        [pageSize]="pageSize"
+        [currentPage]="currentPage"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        itemName="khoa"
+        (pageChange)="currentPage = $event"
+        (pageSizeChange)="pageSize = $event"
+      ></app-pagination>
+    }
+  </article>
+
+  <!-- Modal Dialog Thêm mới / Cập nhật Khoa -->
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-dialog modal-md" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h3>{{ editingId === null ? 'Thêm mới Khoa' : 'Cập nhật Khoa' }}</h3>
+            <p>{{ editingId === null ? 'Khai báo đơn vị khoa chuyên môn mới' : 'Chỉnh sửa thông tin khoa đã chọn' }}</p>
+          </div>
+          <button type="button" class="btn-close" (click)="closeModal()" title="Đóng">✕</button>
         </div>
 
-        <app-pagination
-          [totalItems]="filteredKhoas.length"
-          [pageSize]="pageSize"
-          [currentPage]="currentPage"
-          [pageSizeOptions]="[5, 10, 20, 50]"
-          itemName="khoa"
-          (pageChange)="currentPage = $event"
-          (pageSizeChange)="pageSize = $event"
-        ></app-pagination>
-      }
-    </article>
-  </div>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-dialog-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Mã khoa <span class="req">*</span></label>
+              <input type="text" formControlName="maKhoa" [class.is-invalid]="isControlInvalid('maKhoa')" placeholder="VD: CNTT, DTVT, KTXD" />
+              @if (isControlInvalid('maKhoa')) {
+                <small class="error-text">Mã khoa là bắt buộc (tối đa 20 ký tự).</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Tên khoa <span class="req">*</span></label>
+              <input type="text" formControlName="tenKhoa" [class.is-invalid]="isControlInvalid('tenKhoa')" placeholder="VD: Công nghệ thông tin" />
+              @if (isControlInvalid('tenKhoa')) {
+                <small class="error-text">Tên khoa là bắt buộc.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Mô tả đơn vị</label>
+              <textarea formControlName="moTa" rows="3" placeholder="Mô tả ngành đào tạo, định hướng..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-container">
+                <input type="checkbox" formControlName="active" />
+                <span>Trạng thái hoạt động</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" (click)="closeModal()">Hủy bỏ</button>
+            <button type="submit" class="primary-button" [disabled]="saving">
+              @if (saving) {
+                <span>Đang lưu...</span>
+              } @else {
+                <span>{{ editingId === null ? '✓ Thêm mới' : '✓ Lưu cập nhật' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </section>

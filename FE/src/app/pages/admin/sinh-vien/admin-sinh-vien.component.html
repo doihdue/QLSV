@@ -7,6 +7,9 @@
     </div>
     <div class="header-actions">
       <button type="button" class="secondary-button" (click)="loadSinhViens()">⟳ Làm mới</button>
+      <button type="button" class="primary-button" (click)="openCreateModal()">
+        <span>+</span> Thêm mới sinh viên
+      </button>
     </div>
   </header>
 
@@ -17,194 +20,203 @@
     </span>
   </div>
 
-  <div class="admin-layout">
-    <!-- Form Panel -->
-    <aside class="form-card">
-      <div class="form-header">
-        <h3>{{ editingId === null ? 'Thêm mới sinh viên' : 'Cập nhật sinh viên' }}</h3>
-        <p>{{ editingId === null ? 'Điền thông tin hồ sơ sinh viên' : 'Chỉnh sửa sinh viên đã chọn' }}</p>
+  <!-- Full-Width Table Card -->
+  <article class="table-card">
+    <div class="table-toolbar">
+      <div class="filter-group">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchText"
+            (ngModelChange)="currentPage = 1"
+            placeholder="Tìm theo MSSV, họ tên, email, SĐT..."
+          />
+        </div>
+
+        <select [(ngModel)]="filterLopId" (ngModelChange)="currentPage = 1" class="filter-select">
+          <option value="">Tất cả Lớp hành chính</option>
+          @for (l of lops; track l.id) {
+            <option [value]="l.id">{{ l.tenLop }}</option>
+          }
+        </select>
+
+        <select [(ngModel)]="filterGender" (ngModelChange)="currentPage = 1" class="filter-select">
+          <option value="">Tất cả giới tính</option>
+          <option value="Nam">Nam</option>
+          <option value="Nữ">Nữ</option>
+        </select>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="form-group">
-          <label>Lớp hành chính <span class="req">*</span></label>
-          <select formControlName="lopId" [class.is-invalid]="isControlInvalid('lopId')">
-            <option value="">-- Chọn Lớp hành chính --</option>
-            @for (l of lops; track l.id) {
-              <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
-            }
-          </select>
-          @if (isControlInvalid('lopId')) {
-            <small class="error-text">Vui lòng chọn Lớp hành chính.</small>
-          }
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Họ và tên <span class="req">*</span></label>
-            <input type="text" formControlName="hoTen" [class.is-invalid]="isControlInvalid('hoTen')" placeholder="VD: Đỗ Minh Duệ" />
-            @if (isControlInvalid('hoTen')) {
-              <small class="error-text">Họ tên là bắt buộc.</small>
-            }
-          </div>
-
-          <div class="form-group">
-            <label>Giới tính</label>
-            <select formControlName="gioiTinh">
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Ngày sinh</label>
-            <input type="date" formControlName="ngaySinh" [class.is-invalid]="isControlInvalid('ngaySinh') || form.hasError('dateRangeInvalid')" />
-          </div>
-
-          <div class="form-group">
-            <label>Ngày nhập học</label>
-            <input type="date" formControlName="ngayNhapHoc"
-              [class.is-invalid]="isControlInvalid('ngayNhapHoc') || form.hasError('dateRangeInvalid') || form.get('ngayNhapHoc')?.hasError('dateBefore')" />
-            @if (form.hasError('dateRangeInvalid') || form.get('ngayNhapHoc')?.hasError('dateBefore')) {
-              <small class="error-text">Thời gian trước phải nhỏ hơn thời gian sau (Ngày sinh phải nhỏ hơn ngày nhập học).</small>
-            }
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Số điện thoại</label>
-            <input type="text" formControlName="soDienThoai" placeholder="0987654321" />
-          </div>
-
-          <div class="form-group">
-            <label>Địa chỉ thường trú</label>
-            <input type="text" formControlName="diaChi" placeholder="Quận / Huyện, Tỉnh / Thành phố" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-container">
-            <input type="checkbox" formControlName="active" />
-            <span>Đang theo học (Tài khoản kích hoạt)</span>
-          </label>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="primary-button" [disabled]="saving">
-            {{ saving ? 'Đang lưu...' : editingId === null ? 'Thêm mới' : 'Lưu cập nhật' }}
-          </button>
-          @if (editingId !== null) {
-            <button type="button" class="cancel-button" (click)="resetForm()">Hủy sửa</button>
-          }
-        </div>
-      </form>
-    </aside>
-
-    <!-- Table List Panel -->
-    <article class="table-card">
-      <div class="table-toolbar">
-        <div class="filter-group">
-          <div class="search-input-wrap">
-            <span class="search-icon">🔍</span>
-            <input
-              type="text"
-              [(ngModel)]="searchText"
-              (ngModelChange)="currentPage = 1"
-              placeholder="Tìm theo MSSV, họ tên, email, SĐT..."
-            />
-          </div>
-
-          <select [(ngModel)]="filterLopId" (ngModelChange)="currentPage = 1" class="filter-select">
-            <option value="">Tất cả Lớp hành chính</option>
-            @for (l of lops; track l.id) {
-              <option [value]="l.id">{{ l.tenLop }}</option>
-            }
-          </select>
-
-          <select [(ngModel)]="filterGender" (ngModelChange)="currentPage = 1" class="filter-select">
-            <option value="">Tất cả giới tính</option>
-            <option value="Nam">Nam</option>
-            <option value="Nữ">Nữ</option>
-          </select>
-        </div>
-
-        <div class="list-summary">
-          <span>Tổng số: <strong>{{ filteredSinhViens.length }}</strong> sinh viên</span>
-        </div>
+      <div class="list-summary">
+        <span>Tổng số: <strong>{{ filteredSinhViens.length }}</strong> sinh viên</span>
       </div>
+    </div>
 
-      @if (loading) {
-        <div class="empty-state">Đang tải danh sách sinh viên...</div>
-      } @else if (filteredSinhViens.length === 0) {
-        <div class="empty-state">Không tìm thấy sinh viên nào phù hợp.</div>
-      } @else {
-        <div class="table-container">
-          <table>
-            <thead>
+    @if (loading) {
+      <div class="empty-state">Đang tải danh sách sinh viên...</div>
+    } @else if (filteredSinhViens.length === 0) {
+      <div class="empty-state">Không tìm thấy sinh viên nào phù hợp.</div>
+    } @else {
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>MSSV</th>
+              <th>Họ và tên</th>
+              <th>Giới tính</th>
+              <th>Ngày sinh</th>
+              <th>Lớp hành chính</th>
+              <th>Khoa</th>
+              <th>Email</th>
+              <th>Số điện thoại</th>
+              <th>Trạng thái</th>
+              <th class="text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sv of paginatedSinhViens; track sv.id) {
               <tr>
-                <th>MSSV</th>
-                <th>Họ và tên</th>
-                <th>Giới tính</th>
-                <th>Ngày sinh</th>
-                <th>Lớp hành chính</th>
-                <th>Khoa</th>
-                <th>Email</th>
-                <th>Số điện thoại</th>
-                <th>Trạng thái</th>
-                <th class="text-right">Thao tác</th>
+                <td>
+                  <span class="code-badge">{{ sv.mssv }}</span>
+                  @if (getCohort(sv)) {
+                    <span class="cohort-text">({{ getCohort(sv) }})</span>
+                  }
+                </td>
+                <td>
+                  <strong>{{ sv.hoTen }}</strong>
+                </td>
+                <td>{{ sv.gioiTinh || '-' }}</td>
+                <td>{{ sv.ngaySinh ? (sv.ngaySinh | date: 'dd/MM/yyyy') : '-' }}</td>
+                <td>
+                  {{ sv.lopTen || '-' }}
+                </td>
+                <td>{{ sv.khoaTen || '-' }}</td>
+                <td>
+                  <a [href]="'mailto:' + sv.email" class="email-link">{{ sv.email }}</a>
+                </td>
+                <td>{{ sv.soDienThoai || '-' }}</td>
+                <td>
+                  <span [class]="sv.active ? 'badge-active' : 'badge-inactive'">
+                    {{ sv.active ? 'Đang học' : 'Nghỉ' }}
+                  </span>
+                </td>
+                <td class="text-right actions-cell">
+                  <button type="button" class="btn-reset-pw" (click)="resetPassword(sv)" title="Cấp lại mật khẩu mặc định">🔑 MK</button>
+                  <button type="button" class="btn-edit" (click)="openEditModal(sv)">Sửa</button>
+                  <button type="button" class="btn-delete" (click)="remove(sv)">Xóa</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @for (sv of paginatedSinhViens; track sv.id) {
-                <tr>
-                  <td>
-                    <span class="code-badge">{{ sv.mssv }}</span>
-                    @if (getCohort(sv)) {
-                      <span class="cohort-text">({{ getCohort(sv) }})</span>
-                    }
-                  </td>
-                  <td>
-                    <strong>{{ sv.hoTen }}</strong>
-                  </td>
-                  <td>{{ sv.gioiTinh || '-' }}</td>
-                  <td>{{ sv.ngaySinh ? (sv.ngaySinh | date: 'dd/MM/yyyy') : '-' }}</td>
-                  <td>
-                    {{ sv.lopTen || '-' }}
-                  </td>
-                  <td>{{ sv.khoaTen || '-' }}</td>
-                  <td>
-                    <a [href]="'mailto:' + sv.email" class="email-link">{{ sv.email }}</a>
-                  </td>
-                  <td>{{ sv.soDienThoai || '-' }}</td>
-                  <td>
-                    <span [class]="sv.active ? 'badge-active' : 'badge-inactive'">
-                      {{ sv.active ? 'Đang học' : 'Nghỉ' }}
-                    </span>
-                  </td>
-                  <td class="text-right actions-cell">
-                    <button type="button" class="btn-reset-pw" (click)="resetPassword(sv)" title="Cấp lại mật khẩu mặc định">🔑 Cấp lại MK</button>
-                    <button type="button" class="btn-edit" (click)="edit(sv)">Sửa</button>
-                    <button type="button" class="btn-delete" (click)="remove(sv)">Xóa</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        [totalItems]="filteredSinhViens.length"
+        [pageSize]="pageSize"
+        [currentPage]="currentPage"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        itemName="sinh viên"
+        (pageChange)="currentPage = $event"
+        (pageSizeChange)="pageSize = $event"
+      ></app-pagination>
+    }
+  </article>
+
+  <!-- Modal Dialog Thêm mới / Cập nhật Sinh viên -->
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h3>{{ editingId === null ? 'Thêm mới sinh viên' : 'Cập nhật sinh viên' }}</h3>
+            <p>{{ editingId === null ? 'Điền thông tin hồ sơ để tạo sinh viên mới' : 'Chỉnh sửa thông tin sinh viên đã chọn' }}</p>
+          </div>
+          <button type="button" class="btn-close" (click)="closeModal()" title="Đóng">✕</button>
         </div>
 
-        <app-pagination
-          [totalItems]="filteredSinhViens.length"
-          [pageSize]="pageSize"
-          [currentPage]="currentPage"
-          [pageSizeOptions]="[5, 10, 20, 50]"
-          itemName="sinh viên"
-          (pageChange)="currentPage = $event"
-          (pageSizeChange)="pageSize = $event"
-        ></app-pagination>
-      }
-    </article>
-  </div>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-dialog-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Lớp hành chính <span class="req">*</span></label>
+              <select formControlName="lopId" [class.is-invalid]="isControlInvalid('lopId')">
+                <option value="">-- Chọn Lớp hành chính --</option>
+                @for (l of lops; track l.id) {
+                  <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
+                }
+              </select>
+              @if (isControlInvalid('lopId')) {
+                <small class="error-text">Vui lòng chọn Lớp hành chính.</small>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Họ và tên <span class="req">*</span></label>
+                <input type="text" formControlName="hoTen" [class.is-invalid]="isControlInvalid('hoTen')" placeholder="VD: Đỗ Minh Duệ" />
+                @if (isControlInvalid('hoTen')) {
+                  <small class="error-text">Họ tên là bắt buộc.</small>
+                }
+              </div>
+
+              <div class="form-group">
+                <label>Giới tính</label>
+                <select formControlName="gioiTinh">
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Ngày sinh</label>
+                <input type="date" formControlName="ngaySinh" [class.is-invalid]="isControlInvalid('ngaySinh') || form.hasError('dateRangeInvalid')" />
+              </div>
+
+              <div class="form-group">
+                <label>Ngày nhập học</label>
+                <input type="date" formControlName="ngayNhapHoc"
+                  [class.is-invalid]="isControlInvalid('ngayNhapHoc') || form.hasError('dateRangeInvalid') || form.get('ngayNhapHoc')?.hasError('dateBefore')" />
+                @if (form.hasError('dateRangeInvalid') || form.get('ngayNhapHoc')?.hasError('dateBefore')) {
+                  <small class="error-text">Thời gian trước phải nhỏ hơn thời gian sau (Ngày sinh phải nhỏ hơn ngày nhập học).</small>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="text" formControlName="soDienThoai" placeholder="0987654321" />
+              </div>
+
+              <div class="form-group">
+                <label>Địa chỉ thường trú</label>
+                <input type="text" formControlName="diaChi" placeholder="Quận / Huyện, Tỉnh / Thành phố" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-container">
+                <input type="checkbox" formControlName="active" />
+                <span>Đang theo học (Tài khoản kích hoạt)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="secondary-button" (click)="closeModal()">Hủy bỏ</button>
+            <button type="submit" class="primary-button" [disabled]="saving">
+              @if (saving) {
+                <span>Đang lưu...</span>
+              } @else {
+                <span>{{ editingId === null ? '✓ Thêm mới' : '✓ Lưu cập nhật' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
 </section>
