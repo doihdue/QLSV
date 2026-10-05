@@ -6,13 +6,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record GiangVienRequest(
-        @Size(max = 20, message = "Ma giang vien must be at most 20 characters") String maGiangVien,
-        @NotBlank(message = "Ho ten is required") @Size(max = 150, message = "Ho ten must be at most 150 characters") String hoTen,
-        @Size(max = 150, message = "Email must be at most 150 characters") String email,
-        @Size(max = 20, message = "So dien thoai must be at most 20 characters") String soDienThoai,
-        @Size(max = 100, message = "Hoc vi must be at most 100 characters") String hocVi,
-        @Size(max = 150, message = "Chuyen mon must be at most 150 characters") String chuyenMon,
-        @NotNull(message = "Khoa id is required") Long khoaId,
+        @Size(max = 20, message = "Mã giảng viên tối đa 20 ký tự") String maGiangVien,
+        @NotBlank(message = "Họ và tên giảng viên là bắt buộc") @Size(max = 150, message = "Họ và tên tối đa 150 ký tự") String hoTen,
+        @Size(max = 150, message = "Email tối đa 150 ký tự") String email,
+        @Size(max = 20, message = "Số điện thoại tối đa 20 ký tự") String soDienThoai,
+        @Size(max = 100, message = "Học vị tối đa 100 ký tự") String hocVi,
+        @Size(max = 150, message = "Chuyên môn tối đa 150 ký tự") String chuyenMon,
+        @NotNull(message = "Vui lòng chọn Khoa trực thuộc") Long khoaId,
         Boolean active
 ) {
 }

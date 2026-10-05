@@ -6,14 +6,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record MonHocRequest(
-        @NotBlank(message = "Ma mon hoc is required") @Size(max = 20, message = "Ma mon hoc must be at most 20 characters") String maMonHoc,
-        @NotBlank(message = "Ten mon hoc is required") @Size(max = 150, message = "Ten mon hoc must be at most 150 characters") String tenMonHoc,
-        @NotNull(message = "So tin chi is required") @Min(value = 1, message = "So tin chi must be at least 1") Integer soTinChi,
-        @NotNull(message = "So tiet ly thuyet is required") @Min(value = 0, message = "So tiet ly thuyet must not be negative") Integer soTietLyThuyet,
-        @NotNull(message = "So tiet thuc hanh is required") @Min(value = 0, message = "So tiet thuc hanh must not be negative") Integer soTietThucHanh,
-        @Size(max = 500, message = "Mo ta must be at most 500 characters") String moTa,
-        @Size(max = 255, message = "Mon hoc tien quyet must be at most 255 characters") String monHocTienQuyet,
-        @NotNull(message = "Khoa id is required") Long khoaId,
+        @NotBlank(message = "Mã môn học là bắt buộc") @Size(max = 20, message = "Mã môn học tối đa 20 ký tự") String maMonHoc,
+        @NotBlank(message = "Tên môn học là bắt buộc") @Size(max = 150, message = "Tên môn học tối đa 150 ký tự") String tenMonHoc,
+        @NotNull(message = "Số tín chỉ là bắt buộc") @Min(value = 1, message = "Số tín chỉ phải từ 1 trở lên") Integer soTinChi,
+        @NotNull(message = "Số tiết lý thuyết là bắt buộc") @Min(value = 0, message = "Số tiết lý thuyết không được âm") Integer soTietLyThuyet,
+        @NotNull(message = "Số tiết thực hành là bắt buộc") @Min(value = 0, message = "Số tiết thực hành không được âm") Integer soTietThucHanh,
+        @Size(max = 500, message = "Mô tả tối đa 500 ký tự") String moTa,
+        @Size(max = 255, message = "Môn học tiên quyết tối đa 255 ký tự") String monHocTienQuyet,
+        @NotNull(message = "Vui lòng chọn Khoa phụ trách") Long khoaId,
         Boolean active
 ) {
 }

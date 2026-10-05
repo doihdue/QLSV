@@ -252,7 +252,12 @@
           <div class="period-alert-icon">🟢</div>
           <div class="period-alert-content">
             <strong>Đang mở đợt đăng ký tín chỉ: {{ (currentDot?.tenDot && !currentDot?.tenDot?.includes('?')) ? currentDot?.tenDot : ('Đợt đăng ký tín chỉ Học kỳ ' + (currentDot?.hocKy || '1') + ' (' + (currentDot?.namHoc || '2026-2027') + ')') }}</strong>
-            <p>Hệ thống cho phép đăng ký mới và rút/hủy môn học trong đợt đăng ký hiện tại (Học kỳ {{ currentDot?.hocKy }} - Năm học {{ currentDot?.namHoc }}).</p>
+            <p>
+              Hệ thống cho phép đăng ký mới và rút/hủy môn học trong đợt đăng ký hiện tại (Học kỳ {{ currentDot?.hocKy }} - Năm học {{ currentDot?.namHoc }}).
+              @if (currentDot?.ngayBatDau && currentDot?.ngayKetThuc) {
+                <span> Thời gian mở: <strong>{{ currentDot?.ngayBatDau | date:'dd/MM/yyyy' }}</strong> đến <strong>{{ currentDot?.ngayKetThuc | date:'dd/MM/yyyy' }}</strong> (Hệ thống sẽ tự động đóng khi hết hạn).</span>
+              }
+            </p>
           </div>
         </div>
       } @else if (currentSelectedSemesterStatus === 'NOT_OPEN_YET') {
@@ -276,7 +281,12 @@
           <div class="period-alert-icon">🔴</div>
           <div class="period-alert-content">
             <strong>Cổng đăng ký tín chỉ hiện đang ĐÓNG</strong>
-            <p>Nhà trường hiện chưa mở hoặc đã khóa cổng đăng ký môn học trực tuyến. Bạn chỉ có thể xem danh sách học phần đã đăng ký.</p>
+            <p>
+              Nhà trường hiện chưa mở hoặc đã khóa cổng đăng ký môn học trực tuyến. Bạn chỉ có thể xem danh sách học phần đã đăng ký.
+              @if (currentDot?.ngayBatDau && currentDot?.ngayKetThuc) {
+                <span> (Thời gian đợt: <strong>{{ currentDot?.ngayBatDau | date:'dd/MM/yyyy' }}</strong> - <strong>{{ currentDot?.ngayKetThuc | date:'dd/MM/yyyy' }}</strong>, hệ thống tự động khóa khi hết hạn).</span>
+              }
+            </p>
           </div>
         </div>
       }

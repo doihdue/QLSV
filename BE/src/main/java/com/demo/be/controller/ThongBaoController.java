@@ -1,11 +1,14 @@
 package com.demo.be.controller;
 
+import com.demo.be.dto.message.NotificationEventMessage;
 import com.demo.be.model.ThongBao;
+import com.demo.be.producer.NotificationProducer;
 import com.demo.be.service.ThongBaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +24,26 @@ import java.util.Map;
 public class ThongBaoController {
 
     private final ThongBaoService thongBaoService;
+    private final NotificationProducer notificationProducer;
+
+    @GetMapping("/test-rabbitmq")
+    public ResponseEntity<Map<String, Object>> testRabbitMQ() {
+        NotificationEventMessage testMsg = NotificationEventMessage.builder()
+                .eventType("TEST_MESSAGE")
+                .tenMonHoc("Hệ thống Phân tán (RabbitMQ Test)")
+                .maMonHoc("RABBITMQ01")
+                .maLop("D19CNPM")
+                .reason("Kiểm tra kết nối và nhận message qua RabbitMQ Queue thành công!")
+                .build();
+
+        notificationProducer.sendNotification(testMsg);
+
+        return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "message", "Đã gửi message test vào RabbitMQ Exchange [qlsv.exchange]. Hãy kiểm tra log server để thấy Consumer nhận message!",
+                "data", testMsg
+        ));
+    }
 
     @GetMapping
     public ResponseEntity<List<ThongBao>> getMyNotifications(Principal principal) {

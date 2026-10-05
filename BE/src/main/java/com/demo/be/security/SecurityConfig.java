@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/error", "/api/thong-ke/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/error", "/api/thong-ke/**", "/api/thong-bao/test-rabbitmq").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

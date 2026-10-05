@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
+import { ToastService } from '../../../services/toast.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 export type MonHocItem = {
   id: number;
@@ -34,6 +36,8 @@ export class AdminMonHocComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   protected monHocs: MonHocItem[] = [];
   protected khoas: KhoaOption[] = [];
@@ -113,16 +117,37 @@ export class AdminMonHocComponent implements OnInit {
     return this.filteredMonHocs.slice(start, start + this.pageSize);
   }
 
+  protected isControlInvalid(controlName: string): boolean {
+    const ctrl = this.form.get(controlName);
+    if (!ctrl) return false;
+    const isRequired = ctrl.hasValidator(Validators.required);
+    const isEmpty = !ctrl.value || (typeof ctrl.value === 'string' && !ctrl.value.trim());
+    return (ctrl.invalid || (isRequired && isEmpty)) && (ctrl.touched || ctrl.dirty);
+  }
+
   protected submit(): void {
-    if (this.form.invalid) {
+    const val = this.form.getRawValue();
+    const maMon = val.maMonHoc?.trim();
+    const tenMon = val.tenMonHoc?.trim();
+    const khoaId = val.khoaId;
+
+    if (!maMon || !tenMon || !khoaId) {
       this.form.markAllAsTouched();
+      this.toastService.warning('Vui lòng điền đầy đủ các thông tin bắt buộc của môn học (các trường viền đỏ).', 'Thiếu thông tin bắt buộc');
+      this.cd.detectChanges();
       return;
     }
 
-    const val = this.form.getRawValue();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.toastService.warning('Vui lòng kiểm tra lại các trường thông tin không hợp lệ.', 'Dữ liệu chưa đúng');
+      this.cd.detectChanges();
+      return;
+    }
+
     const payload = {
-      maMonHoc: val.maMonHoc?.trim(),
-      tenMonHoc: val.tenMonHoc?.trim(),
+      maMonHoc: maMon,
+      tenMonHoc: tenMon,
       soTinChi: Number(val.soTinChi),
       soTietLyThuyet: Number(val.soTietLyThuyet),
       soTietThucHanh: Number(val.soTietThucHanh),
@@ -133,8 +158,6 @@ export class AdminMonHocComponent implements OnInit {
     };
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     const req = this.editingId === null
       ? this.http.post<MonHocItem>('http://localhost:8080/api/mon-hoc', payload)
@@ -143,15 +166,17 @@ export class AdminMonHocComponent implements OnInit {
     req.subscribe({
       next: () => {
         this.saving = false;
-        this.successMessage = this.editingId === null
+        const msg = this.editingId === null
           ? 'Thêm mới môn học thành công!'
           : 'Cập nhật môn học thành công!';
+        this.toastService.success(msg, 'Quản lý Môn học');
         this.loadMonHocs();
         this.resetForm();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Không thể lưu môn học. Kiểm tra mã môn học đã tồn tại.';
+        const msg = this.toastService.extractError(err, 'Không thể lưu môn học. Kiểm tra mã môn học.');
+        this.toastService.error(msg, 'Lỗi lưu môn học');
         this.cd.detectChanges();
       },
     });
@@ -170,25 +195,31 @@ export class AdminMonHocComponent implements OnInit {
       moTa: item.moTa || '',
       active: item.active,
     });
-    this.errorMessage = '';
-    this.successMessage = '';
     this.cd.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  protected remove(item: MonHocItem): void {
-    if (!confirm(`Bạn có chắc muốn xóa môn học ${item.tenMonHoc} (${item.maMonHoc})?`)) {
+  protected async remove(item: MonHocItem): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Xác nhận xóa môn học',
+      message: `Bạn có chắc muốn xóa môn học "${item.tenMonHoc}" (${item.maMonHoc})?`,
+      confirmText: 'Xóa môn học',
+      cancelText: 'Hủy bỏ',
+      type: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
     this.http.delete(`http://localhost:8080/api/mon-hoc/${item.id}`).subscribe({
       next: () => {
         this.monHocs = this.monHocs.filter((x) => x.id !== item.id);
-        this.successMessage = `Đã xóa môn học ${item.maMonHoc} thành công.`;
+        this.toastService.success(`Đã xóa môn học ${item.maMonHoc} thành công.`, 'Xóa môn học');
         this.cd.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể xóa môn học này (có thể đã có sinh viên đăng ký hoặc có liên kết điểm).';
+      error: (err) => {
+        const msg = this.toastService.extractError(err, 'Không thể xóa môn học này.');
+        this.toastService.error(msg, 'Lỗi xóa môn học');
         this.cd.detectChanges();
       },
     });

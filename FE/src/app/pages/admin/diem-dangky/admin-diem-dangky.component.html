@@ -20,11 +20,21 @@
         <strong>{{ currentDot.dangMo ? 'CỔNG ĐĂNG KÝ ĐANG MỞ' : 'CỔNG ĐĂNG KÝ ĐÃ KHÓA' }}</strong>
       </div>
       <div class="dot-text">
-        <h3>{{ (currentDot.tenDot && !currentDot.tenDot.includes('?')) ? currentDot.tenDot : ('Đợt đăng ký tín chỉ Học
-          kỳ ' + currentDot.hocKy + ' (' + currentDot.namHoc + ')') }}</h3>
-        <p>Học kỳ: <strong>Học kỳ {{ currentDot.hocKy }}</strong> | Năm học: <strong>{{ currentDot.namHoc }}</strong> |
-          <span>{{ currentDot.dangMo ? 'Sinh viên được phép đăng ký và hủy môn học' : 'Đã khóa thao tác đăng ký môn học
-            của sinh viên' }}</span></p>
+        <h3>{{ (currentDot.tenDot && !currentDot.tenDot.includes('?')) ? currentDot.tenDot : ('Đợt đăng ký tín chỉ Học kỳ ' + currentDot.hocKy + ' (' + currentDot.namHoc + ')') }}</h3>
+        <p>
+          Học kỳ: <strong>Học kỳ {{ currentDot.hocKy }}</strong> | Năm học: <strong>{{ currentDot.namHoc }}</strong> |
+          Thời gian: <strong>{{ currentDot.ngayBatDau ? (currentDot.ngayBatDau | date:'dd/MM/yyyy') : 'Chưa thiết lập' }}</strong>
+          đến <strong>{{ currentDot.ngayKetThuc ? (currentDot.ngayKetThuc | date:'dd/MM/yyyy') : 'Chưa thiết lập' }}</strong>
+        </p>
+        <div class="dot-auto-badge">
+          @if (getDotTimeStatus() === 'NOT_YET') {
+            <span class="pill-auto pill-warning">⏳ Chưa đến ngày mở (Hệ thống sẽ tự động mở vào {{ currentDot.ngayBatDau | date:'dd/MM/yyyy' }})</span>
+          } @else if (getDotTimeStatus() === 'ACTIVE') {
+            <span class="pill-auto pill-success">🟢 Đang trong thời gian mở (Sẽ tự động đóng sau {{ currentDot.ngayKetThuc | date:'dd/MM/yyyy' }})</span>
+          } @else if (getDotTimeStatus() === 'EXPIRED') {
+            <span class="pill-auto pill-danger">🔴 Đã hết hạn đăng ký (Hệ thống đã tự động đóng cổng sau {{ currentDot.ngayKetThuc | date:'dd/MM/yyyy' }})</span>
+          }
+        </div>
       </div>
     </div>
 
@@ -33,7 +43,7 @@
         {{ currentDot.dangMo ? '🔒 Khóa cổng đăng ký' : '🔓 Mở cổng đăng ký' }}
       </button>
       <button type="button" class="btn-config-dot" (click)="openConfigDotModal()">
-        ⚙️ Thiết lập kỳ mới
+        ⚙️ Thiết lập kỳ mới & Thời gian
       </button>
     </div>
   </div>
@@ -55,12 +65,7 @@
     </button>
   </div>
 
-  @if (successMessage) {
-  <div class="alert alert-success">{{ successMessage }}</div>
-  }
-  @if (errorMessage) {
-  <div class="alert alert-danger">{{ errorMessage }}</div>
-  }
+
 
   <!-- ==================== TAB 1: PHÊ DUYỆT BẢNG ĐIỂM ==================== -->
   @if (activeTab === 'duyet') {
@@ -574,44 +579,62 @@
       </div>
 
       <form [formGroup]="batchRegForm" (ngSubmit)="saveBatchRegistration()" class="modal-dialog-form">
+        @if (batchModalError) {
+        <div class="modal-alert modal-alert-danger">
+          <span>⚠️ {{ batchModalError }}</span>
+        </div>
+        }
+
         <div class="modal-body">
           <div class="form-group">
             <label>Chọn Lớp hành chính <span class="req">*</span></label>
-            <select formControlName="lopId">
+            <select formControlName="lopId" [class.is-invalid]="isControlInvalid(batchRegForm, 'lopId')">
               <option value="">-- Chọn Lớp hành chính --</option>
               @for (l of lops; track l.id) {
               <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
               }
             </select>
+            @if (isControlInvalid(batchRegForm, 'lopId')) {
+            <small class="error-text">Vui lòng chọn Lớp hành chính.</small>
+            }
           </div>
 
           <div class="form-group">
             <label>Chọn Môn học <span class="req">*</span></label>
-            <select formControlName="monHocId">
+            <select formControlName="monHocId" [class.is-invalid]="isControlInvalid(batchRegForm, 'monHocId')">
               <option value="">-- Chọn Môn học --</option>
               @for (m of monHocs; track m.id) {
               <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} - {{ m.soTinChi }} TC)</option>
               }
             </select>
+            @if (isControlInvalid(batchRegForm, 'monHocId')) {
+            <small class="error-text">Vui lòng chọn Môn học cần ghi danh.</small>
+            }
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Học kỳ <span class="req">*</span></label>
-              <select formControlName="hocKy">
+              <select formControlName="hocKy" [class.is-invalid]="isControlInvalid(batchRegForm, 'hocKy')">
                 @for (s of semesters; track s.id) {
                 <option [value]="s.id">{{ s.name }}</option>
                 }
               </select>
+              @if (isControlInvalid(batchRegForm, 'hocKy')) {
+              <small class="error-text">Vui lòng chọn Học kỳ.</small>
+              }
             </div>
 
             <div class="form-group">
               <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
+              <select formControlName="namHoc" [class.is-invalid]="isControlInvalid(batchRegForm, 'namHoc')">
                 @for (y of academicYears; track y) {
                 <option [value]="y">{{ y }}</option>
                 }
               </select>
+              @if (isControlInvalid(batchRegForm, 'namHoc')) {
+              <small class="error-text">Vui lòng chọn Năm học.</small>
+              }
             </div>
           </div>
         </div>
@@ -640,44 +663,62 @@
       </div>
 
       <form [formGroup]="addRegForm" (ngSubmit)="saveRegistration()" class="modal-dialog-form">
+        @if (addRegModalError) {
+        <div class="modal-alert modal-alert-danger">
+          <span>⚠️ {{ addRegModalError }}</span>
+        </div>
+        }
+
         <div class="modal-body">
           <div class="form-group">
             <label>Chọn Sinh viên <span class="req">*</span></label>
-            <select formControlName="sinhVienId">
+            <select formControlName="sinhVienId" [class.is-invalid]="isControlInvalid(addRegForm, 'sinhVienId')">
               <option value="">-- Chọn Sinh viên --</option>
               @for (sv of sinhViens; track sv.id) {
               <option [value]="sv.id">{{ sv.hoTen }} ({{ sv.mssv }}) - Lớp: {{ sv.lopTen || '-' }}</option>
               }
             </select>
+            @if (isControlInvalid(addRegForm, 'sinhVienId')) {
+            <small class="error-text">Vui lòng chọn Sinh viên cần ghi danh.</small>
+            }
           </div>
 
           <div class="form-group">
             <label>Chọn Môn học <span class="req">*</span></label>
-            <select formControlName="monHocId">
+            <select formControlName="monHocId" [class.is-invalid]="isControlInvalid(addRegForm, 'monHocId')">
               <option value="">-- Chọn Môn học --</option>
               @for (m of monHocs; track m.id) {
               <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} - {{ m.soTinChi }} TC)</option>
               }
             </select>
+            @if (isControlInvalid(addRegForm, 'monHocId')) {
+            <small class="error-text">Vui lòng chọn Môn học.</small>
+            }
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Học kỳ <span class="req">*</span></label>
-              <select formControlName="hocKy">
+              <select formControlName="hocKy" [class.is-invalid]="isControlInvalid(addRegForm, 'hocKy')">
                 @for (s of semesters; track s.id) {
                 <option [value]="s.id">{{ s.name }}</option>
                 }
               </select>
+              @if (isControlInvalid(addRegForm, 'hocKy')) {
+              <small class="error-text">Vui lòng chọn Học kỳ.</small>
+              }
             </div>
 
             <div class="form-group">
               <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
+              <select formControlName="namHoc" [class.is-invalid]="isControlInvalid(addRegForm, 'namHoc')">
                 @for (y of academicYears; track y) {
                 <option [value]="y">{{ y }}</option>
                 }
               </select>
+              @if (isControlInvalid(addRegForm, 'namHoc')) {
+              <small class="error-text">Vui lòng chọn Năm học.</small>
+              }
             </div>
           </div>
         </div>
@@ -700,44 +741,92 @@
       <div class="modal-header">
         <div>
           <h3>Cấu hình Đợt đăng ký tín chỉ</h3>
-          <p>Thiết lập học kỳ mở đăng ký cho toàn bộ sinh viên</p>
+          <p>Thiết lập thời gian tự động mở và tự động đóng đợt đăng ký cho sinh viên</p>
         </div>
         <button type="button" class="btn-close" (click)="closeConfigDotModal()">✕</button>
       </div>
 
       <form [formGroup]="configDotForm" (ngSubmit)="saveConfigDot()" class="modal-dialog-form">
+        @if (dotModalError) {
+        <div class="modal-alert modal-alert-danger">
+          <span>⚠️ {{ dotModalError }}</span>
+        </div>
+        }
+
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
               <label>Học kỳ mở <span class="req">*</span></label>
-              <select formControlName="hocKy">
+              <select formControlName="hocKy" [class.is-invalid]="isControlInvalid(configDotForm, 'hocKy')">
                 @for (s of semesters; track s.id) {
                 <option [value]="s.id">{{ s.name }}</option>
                 }
               </select>
+              @if (isControlInvalid(configDotForm, 'hocKy')) {
+              <small class="error-text">Vui lòng chọn Học kỳ.</small>
+              }
             </div>
 
             <div class="form-group">
               <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
+              <select formControlName="namHoc" [class.is-invalid]="isControlInvalid(configDotForm, 'namHoc')">
                 @for (y of academicYears; track y) {
                 <option [value]="y">{{ y }}</option>
                 }
               </select>
+              @if (isControlInvalid(configDotForm, 'namHoc')) {
+              <small class="error-text">Vui lòng chọn Năm học.</small>
+              }
             </div>
           </div>
 
           <div class="form-group">
-            <label>Tên đợt đăng ký hiển thị</label>
+            <label>Tên đợt đăng ký hiển thị <span class="req">*</span></label>
             <input type="text" formControlName="tenDot"
+              [class.is-invalid]="isControlInvalid(configDotForm, 'tenDot')"
               placeholder="VD: Đợt đăng ký tín chỉ chính thức Học kỳ 1 (2026-2027)" />
+            @if (isControlInvalid(configDotForm, 'tenDot')) {
+            <small class="error-text">Vui lòng nhập tên đợt đăng ký.</small>
+            }
           </div>
 
-          <div class="form-group">
-            <label class="checkbox-container">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Thời gian bắt đầu mở đợt <span class="req">*</span></label>
+              <input type="date" formControlName="ngayBatDau"
+                [class.is-invalid]="isControlInvalid(configDotForm, 'ngayBatDau') || configDotForm.hasError('dateRangeInvalid')" />
+              @if (configDotForm.get('ngayBatDau')?.touched && configDotForm.get('ngayBatDau')?.hasError('required')) {
+              <small class="error-text">Vui lòng chọn ngày bắt đầu mở đợt.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Thời gian kết thúc đợt <span class="req">*</span></label>
+              <input type="date" formControlName="ngayKetThuc"
+                [class.is-invalid]="isControlInvalid(configDotForm, 'ngayKetThuc') || configDotForm.hasError('dateRangeInvalid') || configDotForm.get('ngayKetThuc')?.hasError('dateBefore')" />
+              @if (configDotForm.get('ngayKetThuc')?.touched && configDotForm.get('ngayKetThuc')?.hasError('required')) {
+              <small class="error-text">Vui lòng chọn ngày kết thúc đợt.</small>
+              }
+              @if (configDotForm.hasError('dateRangeInvalid') || configDotForm.get('ngayKetThuc')?.hasError('dateBefore')) {
+              <small class="error-text">Thời gian trước phải nhỏ hơn thời gian sau (Ngày bắt đầu phải nhỏ hơn ngày kết thúc).</small>
+              }
+            </div>
+          </div>
+
+          <div class="form-group checkbox-row" style="margin: 6px 0 14px; padding: 12px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; margin: 0;">
               <input type="checkbox" formControlName="dangMo" />
-              <span>Bật mở cổng cho sinh viên đăng ký ngay bây giờ</span>
+              <span><strong>Mở cổng đăng ký ngay lập tức</strong> (Cho phép sinh viên đăng ký môn ngay; hệ thống vẫn tự động kiểm soát theo lịch)</span>
             </label>
+          </div>
+
+          <div class="auto-notice-box">
+            <span class="notice-icon">🤖</span>
+            <div class="notice-content">
+              <strong>Cơ chế tự động hóa:</strong>
+              <div>• <strong>Đến ngày bắt đầu:</strong> Cổng đăng ký sẽ <strong>tự động mở</strong> cho sinh viên.</div>
+              <div>• <strong>Hết ngày kết thúc:</strong> Cổng đăng ký sẽ <strong>tự động đóng</strong> và khóa toàn bộ thao tác.</div>
+            </div>
           </div>
         </div>
 
@@ -765,6 +854,12 @@
       </div>
 
       <form [formGroup]="addMoForm" (ngSubmit)="submitAddMo()" class="modal-dialog-form">
+        @if (addMoModalError) {
+        <div class="modal-alert modal-alert-danger">
+          <span>⚠️ {{ addMoModalError }}</span>
+        </div>
+        }
+
         <div class="modal-body">
           <div class="cohort-notice-box">
             <span class="notice-icon">📢</span>
@@ -778,7 +873,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Học kỳ <span class="req">*</span></label>
-              <select formControlName="hocKy">
+              <select formControlName="hocKy" [class.is-invalid]="isControlInvalid(addMoForm, 'hocKy')">
                 @for (s of semesters; track s.id) {
                 <option [value]="s.id">{{ s.name }}</option>
                 }
@@ -787,7 +882,7 @@
 
             <div class="form-group">
               <label>Năm học <span class="req">*</span></label>
-              <select formControlName="namHoc">
+              <select formControlName="namHoc" [class.is-invalid]="isControlInvalid(addMoForm, 'namHoc')">
                 @for (y of academicYears; track y) {
                 <option [value]="y">{{ y }}</option>
                 }
@@ -798,13 +893,13 @@
           <div class="form-row">
             <div class="form-group">
               <label>Khoa đào tạo <span class="req">*</span></label>
-              <select formControlName="khoaId">
+              <select formControlName="khoaId" [class.is-invalid]="isControlInvalid(addMoForm, 'khoaId')">
                 <option value="">-- Chọn Khoa --</option>
                 @for (k of khoas; track k.id) {
                 <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
                 }
               </select>
-              @if (addMoForm.get('khoaId')?.touched && addMoForm.get('khoaId')?.invalid) {
+              @if (isControlInvalid(addMoForm, 'khoaId')) {
               <small class="error-text">Vui lòng chọn Khoa.</small>
               }
             </div>
@@ -821,13 +916,13 @@
 
           <div class="form-group">
             <label>Môn học cần mở <span class="req">*</span></label>
-            <select formControlName="monHocId">
+            <select formControlName="monHocId" [class.is-invalid]="isControlInvalid(addMoForm, 'monHocId')">
               <option value="">-- Chọn môn học để mở cho Khóa này --</option>
               @for (m of filteredMonHocsForMo; track m.id) {
               <option [value]="m.id">{{ m.tenMonHoc }} ({{ m.maMonHoc }} · {{ m.soTinChi }} TC)</option>
               }
             </select>
-            @if (addMoForm.get('monHocId')?.touched && addMoForm.get('monHocId')?.invalid) {
+            @if (isControlInvalid(addMoForm, 'monHocId')) {
             <small class="error-text">Vui lòng chọn môn học cần mở.</small>
             }
           </div>

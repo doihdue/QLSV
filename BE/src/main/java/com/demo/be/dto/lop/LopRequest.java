@@ -6,11 +6,11 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record LopRequest(
-        @Size(max = 20, message = "Ma lop must be at most 20 characters") String maLop,
-        @NotBlank(message = "Ten lop is required") @Size(max = 150, message = "Ten lop must be at most 150 characters") String tenLop,
-        @NotBlank(message = "Nien khoa is required") @Size(max = 20, message = "Nien khoa must be at most 20 characters") String nienKhoa,
-        @NotNull(message = "Si so toi da is required") @Positive(message = "Si so toi da must be positive") Integer siSoToiDa,
-        @NotNull(message = "Khoa id is required") Long khoaId,
+        @Size(max = 20, message = "Mã lớp tối đa 20 ký tự") String maLop,
+        @NotBlank(message = "Tên lớp hành chính là bắt buộc") @Size(max = 150, message = "Tên lớp tối đa 150 ký tự") String tenLop,
+        @NotBlank(message = "Niên khóa là bắt buộc") @Size(max = 20, message = "Niên khóa tối đa 20 ký tự") String nienKhoa,
+        @NotNull(message = "Sĩ số tối đa là bắt buộc") @Positive(message = "Sĩ số tối đa phải lớn hơn 0") Integer siSoToiDa,
+        @NotNull(message = "Vui lòng chọn Khoa trực thuộc") Long khoaId,
         Boolean active
 ) {
 }

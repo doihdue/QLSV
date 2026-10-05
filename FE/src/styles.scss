@@ -1,20 +1,52 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 :root {
   color-scheme: light;
-  --bg: #f8fafc;
-  --bg-2: #f1f5f9;
-  --surface: #ffffff;
+  
+  /* Classic University / Academic Portal Color Palette */
+  --primary: #1e40af;            /* Academic Royal/Cobalt Blue */
+  --primary-hover: #1d4ed8;      /* Active Blue */
+  --primary-strong: #1e3a8a;     /* Deep Navy Blue */
+  --primary-subtle: #eff6ff;     /* Academic Blue Light Tint */
+  --primary-border: #bfdbfe;     /* Academic Blue Border */
+  --primary-ring: rgba(30, 64, 175, 0.15);
+
+  --text: #0f172a;               /* Slate 900 - High Contrast Readability */
+  --text-muted: #475569;         /* Slate 600 - Secondary Academic Text */
+  --muted: #475569;
+  --text-subtle: #64748b;        /* Slate 500 */
+  
+  --bg: #f8fafc;                 /* Crisp Slate 50 Background */
+  --bg-2: #f1f5f9;               /* Slate 100 Background */
+  --surface: #ffffff;            /* Pure White Card Surface */
   --surface-strong: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --primary: #0f766e;
-  --primary-strong: #115e59;
-  --primary-subtle: #f0fdfa;
-  --accent: #d97706;
-  --border: #e2e8f0;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  
+  --border: #e2e8f0;             /* Clean 1px Border (Slate 200) */
+  --border-subtle: #f1f5f9;      /* Subtle Table/Row Border */
+  --border-focus: #2563eb;       /* Input Focus Border */
+  
+  --success: #16a34a;            /* Green */
+  --success-subtle: #f0fdf4;
+  --success-border: #bbf7d0;
+  
+  --danger: #dc2626;             /* Red */
+  --danger-subtle: #fef2f2;
+  --danger-border: #fecaca;
+  
+  --warning: #d97706;            /* Amber */
+  --warning-subtle: #fffbeb;
+  --warning-border: #fde68a;
+
+  --accent: #2563eb;
+  
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 }
 
 html,
@@ -25,9 +57,11 @@ body {
   width: 100%;
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-size: 14px;
 }
 
 * {
@@ -35,8 +69,14 @@ body {
 }
 
 a {
-  color: inherit;
+  color: var(--primary);
   text-decoration: none;
+  transition: color 0.15s ease;
+  
+  &:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+  }
 }
 
 button,
@@ -46,7 +86,9 @@ select {
   font: inherit;
 }
 
-/* Tùy chỉnh thanh cuộn gọn gàng, tinh tế */
+/* ==========================================================================
+   Scrollbar styling - Compact & Clean
+   ========================================================================== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -65,27 +107,29 @@ select {
   background: #94a3b8;
 }
 
-/* Global Clean Status Dots (Professional, no bloated pill backgrounds) */
+/* ==========================================================================
+   Global Academic Status Dots & Badges
+   ========================================================================== */
 .status-active,
 .badge-active {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 0.85rem !important;
-  font-weight: 500 !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
   white-space: nowrap !important;
   line-height: 1 !important;
   color: #166534 !important;
-  background: transparent !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  border: none !important;
+  background: #f0fdf4 !important;
+  padding: 4px 10px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid #bbf7d0 !important;
 
   &::before {
     content: '';
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background-color: #16a34a;
     flex-shrink: 0;
@@ -97,30 +141,598 @@ select {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 0.85rem !important;
-  font-weight: 500 !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
   white-space: nowrap !important;
   line-height: 1 !important;
   color: #991b1b !important;
-  background: transparent !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  border: none !important;
+  background: #fef2f2 !important;
+  padding: 4px 10px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid #fecaca !important;
 
   &::before {
     content: '';
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background-color: #dc2626;
     flex-shrink: 0;
   }
 }
 
-/* Prevent any badge or pill text from breaking onto multiple lines */
 [class*='badge'],
 [class*='pill'],
 [class*='tag'] {
   white-space: nowrap !important;
+}
+
+/* ==========================================================================
+   Input Validation & Form Controls (Red Outline & Background on Error)
+   ========================================================================== */
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid,
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched,
+textarea.ng-invalid.ng-touched {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+
+  &:focus {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
+  }
+}
+
+.error-text,
+.field-error {
+  display: block;
+  margin-top: 5px;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.modal-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 0.86rem;
+  font-weight: 500;
+
+  &.modal-alert-danger {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+  }
+}
+
+/* ==========================================================================
+   Academic Form Controls: Uniform 38px/40px height, crisp borders
+   ========================================================================== */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text);
+  font-size: 0.88rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:focus):not(:disabled) {
+    border-color: #94a3b8;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+
+  &:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+}
+
+textarea {
+  height: auto;
+  min-height: 72px;
+  resize: vertical;
+}
+
+/* ==========================================================================
+   Date Picker Input Styling
+   ========================================================================== */
+input[type="date"] {
+  height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+
+  &:hover:not(:focus) {
+    border-color: #94a3b8;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
+    filter: invert(0.25) sepia(1) saturate(5) hue-rotate(200deg);
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #eff6ff;
+    }
+  }
+
+  &.is-invalid,
+  &.ng-invalid.ng-touched {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+  }
+}
+
+/* ==========================================================================
+   Academic Portal Global Buttons
+   ========================================================================== */
+.primary-button,
+.btn-primary {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background-color: var(--primary);
+  color: #ffffff;
+  border: 1px solid var(--primary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--primary-strong);
+    border-color: var(--primary-strong);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.secondary-button,
+.btn-secondary,
+.cancel-button {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background-color: #f8fafc;
+    border-color: #94a3b8;
+    color: var(--text);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.danger-button,
+.btn-danger {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background-color: #fef2f2;
+    border-color: #ef4444;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* ==========================================================================
+   Academic Portal Global Layouts & Cards (Clean, Professional, No Bloat)
+   ========================================================================== */
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    margin-bottom: 2px;
+    display: block;
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+}
+
+.tip-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  line-height: 1.45;
+
+  .tip-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  code {
+    background: #dbeafe;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85em;
+    color: #1e3a8a;
+  }
+}
+
+/* Standard Academic 2-Column Layout */
+.admin-layout {
+  display: grid;
+  grid-template-columns: minmax(310px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Academic White Cards: Clean 1px border, 8px radius, crisp shadow */
+.form-card,
+.table-card,
+.card-academic {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.form-card {
+  padding: 18px 20px;
+
+  .form-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+
+    h3 {
+      margin: 0 0 3px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+  }
+}
+
+.form-group {
+  margin-bottom: 14px;
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+
+    .req {
+      color: #dc2626;
+      margin-left: 2px;
+    }
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* Academic Table Cards & Density */
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-toolbar {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: #ffffff;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+
+  .search-input-wrap {
+    position: relative;
+    min-width: 220px;
+    max-width: 320px;
+    flex: 1;
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+
+    input {
+      padding-left: 32px;
+      height: 36px;
+      font-size: 0.85rem;
+    }
+  }
+
+  select {
+    height: 36px;
+    width: auto;
+    min-width: 140px;
+    font-size: 0.85rem;
+  }
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+
+    thead th {
+      background-color: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 14px;
+      border-bottom: 2px solid #e2e8f0;
+      text-align: left;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.pagination-bar {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+
+  .page-btns {
+    display: flex;
+    gap: 6px;
+
+    button {
+      height: 30px;
+      min-width: 30px;
+      padding: 0 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      &.active {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: #ffffff;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+/* Compact Badges */
+.code-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+}
+
+.credit-pill {
+  font-weight: 700;
+  color: var(--primary);
+  background-color: var(--primary-subtle);
+  border: 1px solid var(--primary-border);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: inline-block;
+}
+
+.badge-subtle {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }

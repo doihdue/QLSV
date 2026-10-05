@@ -10,12 +10,7 @@
     </div>
   </header>
 
-  @if (successMessage) {
-    <div class="alert alert-success">{{ successMessage }}</div>
-  }
-  @if (errorMessage) {
-    <div class="alert alert-danger">{{ errorMessage }}</div>
-  }
+
 
   <div class="admin-layout">
     <!-- Form Panel -->
@@ -28,16 +23,16 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
           <label>Mã khoa <span class="req">*</span></label>
-          <input type="text" formControlName="maKhoa" placeholder="VD: CNTT, DTVT, KTXD" />
-          @if (form.get('maKhoa')?.touched && form.get('maKhoa')?.invalid) {
+          <input type="text" formControlName="maKhoa" [class.is-invalid]="isControlInvalid('maKhoa')" placeholder="VD: CNTT, DTVT, KTXD" />
+          @if (isControlInvalid('maKhoa')) {
             <small class="error-text">Mã khoa là bắt buộc (tối đa 20 ký tự).</small>
           }
         </div>
 
         <div class="form-group">
           <label>Tên khoa <span class="req">*</span></label>
-          <input type="text" formControlName="tenKhoa" placeholder="VD: Công nghệ thông tin" />
-          @if (form.get('tenKhoa')?.touched && form.get('tenKhoa')?.invalid) {
+          <input type="text" formControlName="tenKhoa" [class.is-invalid]="isControlInvalid('tenKhoa')" placeholder="VD: Công nghệ thông tin" />
+          @if (isControlInvalid('tenKhoa')) {
             <small class="error-text">Tên khoa là bắt buộc.</small>
           }
         </div>

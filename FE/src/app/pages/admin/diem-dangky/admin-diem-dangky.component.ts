@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { MonHocMo } from '../../../services/student.service';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
+import { ToastService } from '../../../services/toast.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 export type MonHocOption = {
   id: number;
@@ -75,6 +77,8 @@ export class AdminDiemDangKyComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   protected activeTab: 'duyet' | 'dangky' | 'monhocmo' = 'duyet';
 
@@ -152,6 +156,29 @@ export class AdminDiemDangKyComponent implements OnInit {
     namHoc: ['2026-2027', Validators.required],
   });
 
+  private static dateRangeValidator(startKey: string, endKey: string): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const startCtrl = control.get(startKey);
+      const endCtrl = control.get(endKey);
+      if (!startCtrl || !endCtrl) return null;
+
+      const start = startCtrl.value;
+      const end = endCtrl.value;
+
+      if (start && end && start >= end) {
+        endCtrl.setErrors({ ...endCtrl.errors, dateBefore: true });
+        return { dateRangeInvalid: true };
+      } else {
+        if (endCtrl.hasError('dateBefore')) {
+          const errors = { ...endCtrl.errors };
+          delete errors['dateBefore'];
+          endCtrl.setErrors(Object.keys(errors).length > 0 ? errors : null);
+        }
+        return null;
+      }
+    };
+  }
+
   // Đợt đăng ký hiện tại
   protected currentDot: {
     id: number;
@@ -159,15 +186,27 @@ export class AdminDiemDangKyComponent implements OnInit {
     namHoc: string;
     tenDot: string;
     dangMo: boolean;
+    ngayBatDau?: string | null;
+    ngayKetThuc?: string | null;
   } | null = null;
 
   protected showConfigDotModal = false;
-  protected readonly configDotForm = this.fb.group({
-    hocKy: ['1', Validators.required],
-    namHoc: ['2026-2027', Validators.required],
-    tenDot: [''],
-    dangMo: [true],
-  });
+  protected dotModalError = '';
+  protected batchModalError = '';
+  protected addRegModalError = '';
+  protected addMoModalError = '';
+
+  protected readonly configDotForm = this.fb.group(
+    {
+      hocKy: ['1', Validators.required],
+      namHoc: ['2026-2027', Validators.required],
+      tenDot: ['', Validators.required],
+      dangMo: [true],
+      ngayBatDau: ['', Validators.required],
+      ngayKetThuc: ['', Validators.required],
+    },
+    { validators: [AdminDiemDangKyComponent.dateRangeValidator('ngayBatDau', 'ngayKetThuc')] }
+  );
 
   // Loading & alerts
   protected loading = false;
@@ -183,11 +222,33 @@ export class AdminDiemDangKyComponent implements OnInit {
     this.loadMonHocMoList();
   }
 
-  private sanitizeDot<T extends { hocKy: string; namHoc: string; tenDot: string } | null>(dot: T): T {
+  private formatDateForInput(dateVal: any, defaultOffsetDays = 0): string {
+    if (!dateVal) {
+      const d = new Date(Date.now() + defaultOffsetDays * 86400000);
+      return d.toISOString().slice(0, 10);
+    }
+    if (Array.isArray(dateVal)) {
+      const y = String(dateVal[0]).padStart(4, '0');
+      const m = String(dateVal[1]).padStart(2, '0');
+      const d = String(dateVal[2]).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    if (typeof dateVal === 'string') {
+      return dateVal.slice(0, 10);
+    }
+    if (dateVal instanceof Date) {
+      return dateVal.toISOString().slice(0, 10);
+    }
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private sanitizeDot<T extends { hocKy: string; namHoc: string; tenDot: string; ngayBatDau?: any; ngayKetThuc?: any } | null>(dot: T): T {
     if (!dot) return dot;
     if (!dot.tenDot || dot.tenDot.includes('?')) {
       dot.tenDot = `Đợt đăng ký tín chỉ Học kỳ ${dot.hocKy} (${dot.namHoc})`;
     }
+    dot.ngayBatDau = this.formatDateForInput(dot.ngayBatDau, 0);
+    dot.ngayKetThuc = this.formatDateForInput(dot.ngayKetThuc, 30);
     return dot;
   }
 
@@ -201,6 +262,7 @@ export class AdminDiemDangKyComponent implements OnInit {
         }
         this.cd.detectChanges();
       },
+      error: () => {},
     });
   }
 
@@ -210,42 +272,77 @@ export class AdminDiemDangKyComponent implements OnInit {
     this.http.patch<typeof this.currentDot>(`http://localhost:8080/api/dot-dang-ky/hien-tai/toggle?open=${newStatus}`, {}).subscribe({
       next: (updated) => {
         this.currentDot = this.sanitizeDot(updated);
-        this.successMessage = newStatus ? 'Đã MỞ CỔNG đăng ký môn học cho sinh viên!' : 'Đã KHÓA CỔNG đăng ký môn học!';
+        const msg = newStatus ? 'Đã MỞ CỔNG đăng ký môn học cho sinh viên!' : 'Đã KHÓA CỔNG đăng ký môn học!';
+        this.toastService.success(msg, 'Trạng thái Cổng Đăng ký');
         this.cd.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể cập nhật trạng thái cổng đăng ký.';
+      error: (err) => {
+        const msg = this.toastService.extractError(err, 'Không thể cập nhật trạng thái cổng đăng ký.');
+        this.toastService.error(msg, 'Lỗi thao tác');
         this.cd.detectChanges();
       },
     });
   }
 
-  protected openConfigDotModal(): void {
-    if (this.currentDot) {
-      this.configDotForm.patchValue({
-        hocKy: this.currentDot.hocKy,
-        namHoc: this.currentDot.namHoc,
-        tenDot: this.currentDot.tenDot,
-        dangMo: this.currentDot.dangMo,
-      });
+  protected isControlInvalid(form: FormGroup, controlName: string): boolean {
+    const ctrl = form.get(controlName);
+    return !!ctrl && ctrl.invalid && (ctrl.touched || ctrl.dirty);
+  }
+
+  protected getDotTimeStatus(): 'ACTIVE' | 'NOT_YET' | 'EXPIRED' | 'UNKNOWN' {
+    if (!this.currentDot || !this.currentDot.ngayBatDau || !this.currentDot.ngayKetThuc) {
+      return 'UNKNOWN';
     }
+    const today = new Date().toISOString().slice(0, 10);
+    if (today < this.currentDot.ngayBatDau) {
+      return 'NOT_YET';
+    }
+    if (today > this.currentDot.ngayKetThuc) {
+      return 'EXPIRED';
+    }
+    return 'ACTIVE';
+  }
+
+  protected openConfigDotModal(): void {
+    this.dotModalError = '';
+    const batDau = this.formatDateForInput(this.currentDot?.ngayBatDau, 0);
+    const ketThuc = this.formatDateForInput(this.currentDot?.ngayKetThuc, 30);
+
+    this.configDotForm.patchValue({
+      hocKy: this.currentDot?.hocKy || '1',
+      namHoc: this.currentDot?.namHoc || '2026-2027',
+      tenDot: (this.currentDot?.tenDot && !this.currentDot.tenDot.includes('?'))
+        ? this.currentDot.tenDot
+        : `Đợt đăng ký tín chỉ Học kỳ ${this.currentDot?.hocKy || '1'} (${this.currentDot?.namHoc || '2026-2027'})`,
+      dangMo: this.currentDot ? this.currentDot.dangMo : true,
+      ngayBatDau: batDau,
+      ngayKetThuc: ketThuc,
+    });
     this.showConfigDotModal = true;
   }
 
   protected closeConfigDotModal(): void {
     this.showConfigDotModal = false;
+    this.dotModalError = '';
   }
 
   protected saveConfigDot(): void {
+    this.dotModalError = '';
     if (this.configDotForm.invalid) {
       this.configDotForm.markAllAsTouched();
+      const val = this.configDotForm.getRawValue();
+      if (val.ngayBatDau && val.ngayKetThuc && val.ngayBatDau >= val.ngayKetThuc) {
+        this.dotModalError = 'Thời gian trước phải nhỏ hơn thời gian sau (Ngày bắt đầu phải nhỏ hơn ngày kết thúc).';
+        this.toastService.error(this.dotModalError, 'Lỗi khoảng thời gian');
+      } else {
+        this.dotModalError = 'Vui lòng kiểm tra và điền đầy đủ các thông tin bắt buộc (các ô viền đỏ).';
+        this.toastService.warning(this.dotModalError, 'Thiếu thông tin');
+      }
       return;
     }
 
     const val = this.configDotForm.getRawValue();
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.http.put<typeof this.currentDot>('http://localhost:8080/api/dot-dang-ky/hien-tai', val).subscribe({
       next: (updated) => {
@@ -256,12 +353,14 @@ export class AdminDiemDangKyComponent implements OnInit {
           this.filterRegHocKy = updated.hocKy;
           this.filterRegNamHoc = updated.namHoc;
         }
-        this.successMessage = 'Đã cập nhật Đợt đăng ký tín chỉ thành công!';
+        this.toastService.success('Đã cập nhật Đợt đăng ký tín chỉ thành công! Cổng đăng ký sẽ tự động mở/đóng theo mốc thời gian đã đặt.', 'Cấu hình hoàn tất');
         this.cd.detectChanges();
       },
-      error: () => {
+      error: (err) => {
         this.saving = false;
-        this.errorMessage = 'Không thể lưu đợt đăng ký.';
+        const msg = this.toastService.extractError(err, 'Không thể lưu đợt đăng ký. Vui lòng kiểm tra lại thời gian.');
+        this.dotModalError = msg;
+        this.toastService.error(msg, 'Lỗi cấu hình đợt đăng ký');
         this.cd.detectChanges();
       },
     });
@@ -377,17 +476,24 @@ export class AdminDiemDangKyComponent implements OnInit {
     return this.pendingClassStudents.slice(start, start + this.pendingPageSize);
   }
 
-  protected approvePendingClass(cls: any): void {
+  protected async approvePendingClass(cls: any): Promise<void> {
     const courseTitle = cls.monHocTen || cls.tenMonHoc;
     const classTitle = cls.maLop ? `${cls.tenLop} (${cls.maLop})` : (cls.tenLop || `Toàn khóa ${cls.khoaHoc || ''}`);
 
-    if (!confirm(`Xác nhận DUYỆT CÔNG BỐ bảng điểm môn "${courseTitle}" (${classTitle})?\nĐiểm sẽ được công bố chính thức cho sinh viên tra cứu.`)) {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Phê duyệt công bố điểm',
+      message: `Bạn có chắc muốn DUYỆT CÔNG BỐ bảng điểm môn "${courseTitle}" (${classTitle})?\nĐiểm sẽ được công bố chính thức cho sinh viên tra cứu ngay lập tức.`,
+      confirmText: 'Duyệt công bố',
+      cancelText: 'Hủy bỏ',
+      type: 'primary',
+    });
+    if (!confirmed) {
       return;
     }
     this.loadingPendingDetails = true;
     this.http.put(`http://localhost:8080/api/admin/duyet-diem/${cls.monHocMoId}/approve`, {}).subscribe({
       next: () => {
-        this.successMessage = `Đã duyệt công bố bảng điểm môn ${courseTitle} thành công!`;
+        this.toastService.success(`Đã duyệt công bố bảng điểm môn ${courseTitle} thành công!`, 'Phê duyệt hoàn tất');
         this.selectedPendingClass = null;
         this.pendingClassStudents = [];
         this.loadPendingClasses();
@@ -396,18 +502,27 @@ export class AdminDiemDangKyComponent implements OnInit {
       },
       error: (err) => {
         this.loadingPendingDetails = false;
-        this.errorMessage = err?.error?.message || 'Không thể duyệt bảng điểm.';
+        const msg = this.toastService.extractError(err, 'Không thể duyệt bảng điểm.');
+        this.toastService.error(msg, 'Lỗi phê duyệt');
         this.cd.detectChanges();
       },
     });
   }
 
-  protected rejectPendingClass(cls: any): void {
+  protected async rejectPendingClass(cls: any): Promise<void> {
     const courseTitle = cls.monHocTen || cls.tenMonHoc;
-    const reason = prompt(`Nhập lý do từ chối bảng điểm môn "${courseTitle}" (để gửi phản hồi cho Giảng viên):`, 'Cần rà soát và kiểm tra lại điểm thành phần');
-    if (reason === null) return;
-    if (!reason.trim()) {
-      alert('Vui lòng nhập lý do từ chối để giảng viên có thể chỉnh sửa.');
+    const reason = await this.confirmDialog.prompt({
+      title: 'Từ chối phê duyệt bảng điểm',
+      message: `Nhập lý do từ chối bảng điểm môn "${courseTitle}" để gửi thông báo phản hồi cho Giảng viên:`,
+      defaultValue: 'Cần rà soát và kiểm tra lại điểm thành phần',
+      placeholder: 'Nhập lý do cụ thể...',
+      confirmText: 'Gửi lý do từ chối',
+      cancelText: 'Hủy bỏ',
+      type: 'warning',
+      inputType: 'textarea',
+      required: true,
+    });
+    if (!reason || !reason.trim()) {
       return;
     }
     this.loadingPendingDetails = true;
@@ -416,7 +531,7 @@ export class AdminDiemDangKyComponent implements OnInit {
       reason: reason.trim(),
     }).subscribe({
       next: () => {
-        this.successMessage = `Đã từ chối bảng điểm môn ${courseTitle}. Giảng viên sẽ nhận được lý do để chỉnh sửa lại.`;
+        this.toastService.info(`Đã từ chối bảng điểm môn ${courseTitle}. Giảng viên sẽ nhận được lý do để chỉnh sửa lại.`, 'Từ chối duyệt');
         this.selectedPendingClass = null;
         this.pendingClassStudents = [];
         this.loadPendingClasses();
@@ -425,7 +540,8 @@ export class AdminDiemDangKyComponent implements OnInit {
       },
       error: (err) => {
         this.loadingPendingDetails = false;
-        this.errorMessage = err?.error?.message || 'Không thể từ chối bảng điểm.';
+        const msg = this.toastService.extractError(err, 'Không thể từ chối bảng điểm.');
+        this.toastService.error(msg, 'Lỗi từ chối duyệt');
         this.cd.detectChanges();
       },
     });
@@ -454,6 +570,7 @@ export class AdminDiemDangKyComponent implements OnInit {
   }
 
   protected openAddRegistrationModal(): void {
+    this.addRegModalError = '';
     this.showAddRegModal = true;
     this.addRegForm.patchValue({
       sinhVienId: '',
@@ -465,11 +582,14 @@ export class AdminDiemDangKyComponent implements OnInit {
 
   protected closeAddRegistrationModal(): void {
     this.showAddRegModal = false;
+    this.addRegModalError = '';
   }
 
   protected saveRegistration(): void {
+    this.addRegModalError = '';
     if (this.addRegForm.invalid) {
       this.addRegForm.markAllAsTouched();
+      this.addRegModalError = 'Vui lòng chọn đầy đủ Sinh viên và Môn học.';
       return;
     }
 
@@ -483,20 +603,20 @@ export class AdminDiemDangKyComponent implements OnInit {
     };
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.http.post<DangKyItem>('http://localhost:8080/api/dang-ky-mon-hoc', payload).subscribe({
       next: (savedReg) => {
         this.saving = false;
         this.closeAddRegistrationModal();
-        this.successMessage = `Đã ghi danh thành công sinh viên vào môn ${savedReg.monHocTen}!`;
+        this.toastService.success(`Đã ghi danh thành công sinh viên vào môn ${savedReg.monHocTen}!`, 'Ghi danh thành công');
         this.allRegistrations = [savedReg, ...this.allRegistrations];
         this.cd.detectChanges();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Sinh viên này đã đăng ký môn học trong học kỳ này rồi.';
+        const msg = this.toastService.extractError(err, 'Sinh viên này đã đăng ký môn học trong học kỳ này rồi.');
+        this.addRegModalError = msg;
+        this.toastService.error(msg, 'Lỗi ghi danh sinh viên');
         this.cd.detectChanges();
       },
     });
@@ -504,6 +624,7 @@ export class AdminDiemDangKyComponent implements OnInit {
 
   // Ghi danh toàn bộ sinh viên lớp hành chính
   protected openBatchRegModal(): void {
+    this.batchModalError = '';
     this.batchRegForm.patchValue({
       lopId: this.lops[0]?.id ? String(this.lops[0].id) : '',
       monHocId: this.monHocs[0]?.id ? String(this.monHocs[0].id) : '',
@@ -515,11 +636,15 @@ export class AdminDiemDangKyComponent implements OnInit {
 
   protected closeBatchRegModal(): void {
     this.showBatchRegModal = false;
+    this.batchModalError = '';
   }
 
   protected saveBatchRegistration(): void {
+    this.batchModalError = '';
     if (this.batchRegForm.invalid) {
       this.batchRegForm.markAllAsTouched();
+      this.batchModalError = 'Vui lòng chọn đầy đủ Lớp hành chính và Môn học.';
+      this.toastService.warning(this.batchModalError, 'Thiếu thông tin');
       return;
     }
     const val = this.batchRegForm.getRawValue();
@@ -527,8 +652,6 @@ export class AdminDiemDangKyComponent implements OnInit {
     const mon = this.monHocs.find((m) => String(m.id) === val.monHocId);
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.http
       .post<DangKyItem[]>(
@@ -540,30 +663,40 @@ export class AdminDiemDangKyComponent implements OnInit {
           this.allRegistrations = allRegs;
           this.saving = false;
           this.showBatchRegModal = false;
-          this.successMessage = `Đã ghi danh toàn bộ sinh viên Lớp "${lop?.tenLop}" vào môn học "${mon?.tenMonHoc}" thành công!`;
+          this.toastService.success(`Đã ghi danh toàn bộ sinh viên Lớp "${lop?.tenLop}" vào môn học "${mon?.tenMonHoc}" thành công!`, 'Ghi danh theo lớp');
           this.cd.detectChanges();
         },
-        error: () => {
+        error: (err) => {
           this.saving = false;
-          this.errorMessage = 'Có lỗi xảy ra khi ghi danh lớp hành chính.';
+          const msg = this.toastService.extractError(err, 'Có lỗi xảy ra khi ghi danh lớp hành chính.');
+          this.batchModalError = msg;
+          this.toastService.error(msg, 'Lỗi ghi danh theo lớp');
           this.cd.detectChanges();
         },
       });
   }
 
-  protected cancelRegistration(item: DangKyItem): void {
-    if (!confirm(`Bạn có chắc muốn hủy đăng ký môn ${item.monHocTen} của sinh viên ${item.sinhVienHoTen} (${item.sinhVienMssv})?`)) {
+  protected async cancelRegistration(item: DangKyItem): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Hủy đăng ký môn học',
+      message: `Bạn có chắc muốn hủy đăng ký môn ${item.monHocTen} của sinh viên ${item.sinhVienHoTen} (${item.sinhVienMssv})?`,
+      confirmText: 'Hủy đăng ký',
+      cancelText: 'Giữ lại',
+      type: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
     this.http.delete(`http://localhost:8080/api/dang-ky-mon-hoc/${item.id}`).subscribe({
       next: () => {
         this.allRegistrations = this.allRegistrations.filter((r) => r.id !== item.id);
-        this.successMessage = `Đã hủy môn ${item.monHocMa} cho sinh viên ${item.sinhVienMssv}.`;
+        this.toastService.success(`Đã hủy môn ${item.monHocMa} cho sinh viên ${item.sinhVienMssv}.`, 'Hủy đăng ký');
         this.cd.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể hủy đăng ký môn học này.';
+      error: (err) => {
+        const msg = this.toastService.extractError(err, 'Không thể hủy đăng ký môn học này.');
+        this.toastService.error(msg, 'Lỗi hủy đăng ký');
         this.cd.detectChanges();
       },
     });
@@ -657,16 +790,21 @@ export class AdminDiemDangKyComponent implements OnInit {
       monHocId: '',
       ghiChu: '',
     });
+    this.addMoModalError = '';
     this.showAddMoModal = true;
   }
 
   protected closeAddMoModal(): void {
     this.showAddMoModal = false;
+    this.addMoModalError = '';
   }
 
   protected submitAddMo(): void {
+    this.addMoModalError = '';
     if (this.addMoForm.invalid) {
       this.addMoForm.markAllAsTouched();
+      this.addMoModalError = 'Vui lòng chọn đầy đủ Khoa và Môn học cần mở.';
+      this.toastService.warning(this.addMoModalError, 'Thiếu thông tin');
       return;
     }
     const val = this.addMoForm.getRawValue();
@@ -684,20 +822,20 @@ export class AdminDiemDangKyComponent implements OnInit {
     };
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     this.http.post<MonHocMo>('http://localhost:8080/api/mon-hoc-mo', payload).subscribe({
       next: (res) => {
         this.saving = false;
         this.closeAddMoModal();
-        this.successMessage = `Đã mở môn "${res.tenMonHoc}" cho toàn bộ các lớp thuộc Khóa ${res.khoaHoc} (${res.tenKhoa || ''})!`;
+        this.toastService.success(`Đã mở môn "${res.tenMonHoc}" cho toàn bộ các lớp thuộc Khóa ${res.khoaHoc} (${res.tenKhoa || ''})!`, 'Mở môn thành công');
         this.loadMonHocMoList();
         this.cd.detectChanges();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Không thể mở môn học cho khóa này.';
+        const msg = this.toastService.extractError(err, 'Không thể mở môn học cho khóa này.');
+        this.addMoModalError = msg;
+        this.toastService.error(msg, 'Lỗi mở môn học');
         this.cd.detectChanges();
       },
     });
@@ -712,36 +850,46 @@ export class AdminDiemDangKyComponent implements OnInit {
 
     this.http.put<MonHocMo>(url, {}).subscribe({
       next: (updated) => {
-        this.successMessage = updated.tenGiangVien
+        const msg = updated.tenGiangVien
           ? `Đã phân công giảng viên ${updated.tenGiangVien} phụ trách môn ${updated.tenMonHoc}!`
           : `Đã hủy phân công giảng viên cho môn ${updated.tenMonHoc}!`;
+        this.toastService.success(msg, 'Phân công Giảng viên');
         this.monHocMoList = this.monHocMoList.map((m) => (m.id === updated.id ? updated : m));
         this.cd.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể phân công giảng viên.';
+      error: (err) => {
+        const msg = this.toastService.extractError(err, 'Không thể phân công giảng viên.');
+        this.toastService.error(msg, 'Lỗi phân công');
         this.cd.detectChanges();
       },
     });
   }
 
-  protected removeMonHocMo(item: MonHocMo): void {
+  protected async removeMonHocMo(item: MonHocMo): Promise<void> {
     const isClassSpecific = !!item.tenLop;
     const msg = isClassSpecific
       ? `Bạn có chắc muốn hủy môn "${item.tenMonHoc}" (${item.monHocMa}) của lớp ${item.tenLop}?`
       : `Bạn có chắc muốn xóa môn "${item.tenMonHoc}" (${item.monHocMa}) khỏi danh mục mở chung của khóa ${item.khoaHoc}? (Tất cả các lớp trong khóa này cũng sẽ được hủy môn)`;
 
-    if (!confirm(msg)) {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Xóa môn học mở',
+      message: msg,
+      confirmText: 'Xóa môn',
+      cancelText: 'Hủy',
+      type: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
     this.http.delete(`http://localhost:8080/api/mon-hoc-mo/${item.id}`).subscribe({
       next: () => {
         this.monHocMoList = this.monHocMoList.filter((m) => m.id !== item.id);
-        this.successMessage = `Đã xóa môn "${item.tenMonHoc}".`;
+        this.toastService.success(`Đã xóa môn "${item.tenMonHoc}".`, 'Xóa môn mở');
         this.cd.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể xóa môn học khỏi kỳ mở.';
+      error: (err) => {
+        const errMsg = this.toastService.extractError(err, 'Không thể xóa môn học khỏi kỳ mở.');
+        this.toastService.error(errMsg, 'Lỗi xóa môn');
         this.cd.detectChanges();
       },
     });

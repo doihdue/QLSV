@@ -17,13 +17,6 @@
     </span>
   </div>
 
-  @if (successMessage) {
-    <div class="alert alert-success">{{ successMessage }}</div>
-  }
-  @if (errorMessage) {
-    <div class="alert alert-danger">{{ errorMessage }}</div>
-  }
-
   <div class="admin-layout">
     <!-- Form Panel -->
     <aside class="form-card">
@@ -35,13 +28,13 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
           <label>Lớp hành chính <span class="req">*</span></label>
-          <select formControlName="lopId">
+          <select formControlName="lopId" [class.is-invalid]="isControlInvalid('lopId')">
             <option value="">-- Chọn Lớp hành chính --</option>
             @for (l of lops; track l.id) {
               <option [value]="l.id">{{ l.tenLop }} ({{ l.maLop }})</option>
             }
           </select>
-          @if (form.get('lopId')?.touched && form.get('lopId')?.invalid) {
+          @if (isControlInvalid('lopId')) {
             <small class="error-text">Vui lòng chọn Lớp hành chính.</small>
           }
         </div>
@@ -49,8 +42,8 @@
         <div class="form-row">
           <div class="form-group">
             <label>Họ và tên <span class="req">*</span></label>
-            <input type="text" formControlName="hoTen" placeholder="VD: Đỗ Minh Duệ" />
-            @if (form.get('hoTen')?.touched && form.get('hoTen')?.invalid) {
+            <input type="text" formControlName="hoTen" [class.is-invalid]="isControlInvalid('hoTen')" placeholder="VD: Đỗ Minh Duệ" />
+            @if (isControlInvalid('hoTen')) {
               <small class="error-text">Họ tên là bắt buộc.</small>
             }
           </div>
@@ -67,12 +60,16 @@
         <div class="form-row">
           <div class="form-group">
             <label>Ngày sinh</label>
-            <input type="date" formControlName="ngaySinh" />
+            <input type="date" formControlName="ngaySinh" [class.is-invalid]="isControlInvalid('ngaySinh') || form.hasError('dateRangeInvalid')" />
           </div>
 
           <div class="form-group">
             <label>Ngày nhập học</label>
-            <input type="date" formControlName="ngayNhapHoc" />
+            <input type="date" formControlName="ngayNhapHoc"
+              [class.is-invalid]="isControlInvalid('ngayNhapHoc') || form.hasError('dateRangeInvalid') || form.get('ngayNhapHoc')?.hasError('dateBefore')" />
+            @if (form.hasError('dateRangeInvalid') || form.get('ngayNhapHoc')?.hasError('dateBefore')) {
+              <small class="error-text">Thời gian trước phải nhỏ hơn thời gian sau (Ngày sinh phải nhỏ hơn ngày nhập học).</small>
+            }
           </div>
         </div>
 

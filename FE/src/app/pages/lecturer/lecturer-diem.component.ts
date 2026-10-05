@@ -4,6 +4,7 @@ import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MonHocMo } from '../../services/student.service';
 import { PaginationComponent } from '../../components/pagination/pagination.component';
+import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 
 export type LecturerGradeItem = {
   dangKyMonHocId: number;
@@ -31,6 +32,7 @@ export type LecturerGradeItem = {
 export class LecturerDiemComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   protected classes: MonHocMo[] = [];
   protected selectedClass: MonHocMo | null = null;
@@ -184,7 +186,7 @@ export class LecturerDiemComponent implements OnInit {
     return item?.ghiChuDuyet || null;
   }
 
-  protected save(submitForApproval: boolean): void {
+  protected async save(submitForApproval: boolean): Promise<void> {
     if (!this.selectedClass) return;
 
     this.successMessage = '';
@@ -206,7 +208,14 @@ export class LecturerDiemComponent implements OnInit {
         return;
       }
 
-      if (!confirm(`Xác nhận gửi bảng điểm riêng cho LỚP "${className}" (${this.selectedClass.monHocMa} - ${this.selectedClass.tenMonHoc}):\n\nToàn bộ ${this.students.length} sinh viên của lớp đã có đủ điểm hợp lệ. Bạn có chắc chắn muốn gửi bảng điểm lớp ${className} lên Admin phê duyệt không? (Chỉ gửi điểm của lớp này, các lớp khác bạn giảng dạy sẽ không bị ảnh hưởng).`)) {
+      const confirmed = await this.confirmDialog.confirm({
+        title: 'Xác nhận gửi bảng điểm phê duyệt',
+        message: `Xác nhận gửi bảng điểm riêng cho LỚP "${className}" (${this.selectedClass.monHocMa} - ${this.selectedClass.tenMonHoc}):\n\nToàn bộ ${this.students.length} sinh viên của lớp đã có đủ điểm hợp lệ. Bạn có chắc chắn muốn gửi bảng điểm lớp ${className} lên Admin phê duyệt không?`,
+        confirmText: 'Gửi phê duyệt',
+        cancelText: 'Kiểm tra lại',
+        type: 'primary',
+      });
+      if (!confirmed) {
         return;
       }
     }

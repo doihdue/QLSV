@@ -10,12 +10,7 @@
     </div>
   </header>
 
-  @if (successMessage) {
-    <div class="alert alert-success">{{ successMessage }}</div>
-  }
-  @if (errorMessage) {
-    <div class="alert alert-danger">{{ errorMessage }}</div>
-  }
+
 
   <div class="admin-layout">
     <!-- Form Panel -->
@@ -28,16 +23,16 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
           <label>Mã môn học <span class="req">*</span></label>
-          <input type="text" formControlName="maMonHoc" placeholder="VD: CS101, MATH201" />
-          @if (form.get('maMonHoc')?.touched && form.get('maMonHoc')?.invalid) {
+          <input type="text" formControlName="maMonHoc" [class.is-invalid]="isControlInvalid('maMonHoc')" placeholder="VD: CS101, MATH201" />
+          @if (isControlInvalid('maMonHoc')) {
             <small class="error-text">Mã môn học là bắt buộc (tối đa 20 ký tự).</small>
           }
         </div>
 
         <div class="form-group">
           <label>Tên môn học <span class="req">*</span></label>
-          <input type="text" formControlName="tenMonHoc" placeholder="VD: Lập trình Hướng đối tượng" />
-          @if (form.get('tenMonHoc')?.touched && form.get('tenMonHoc')?.invalid) {
+          <input type="text" formControlName="tenMonHoc" [class.is-invalid]="isControlInvalid('tenMonHoc')" placeholder="VD: Lập trình Hướng đối tượng" />
+          @if (isControlInvalid('tenMonHoc')) {
             <small class="error-text">Tên môn học là bắt buộc.</small>
           }
         </div>
@@ -45,29 +40,38 @@
         <div class="form-row-3">
           <div class="form-group">
             <label>Số TC <span class="req">*</span></label>
-            <input type="number" formControlName="soTinChi" min="1" max="10" />
+            <input type="number" formControlName="soTinChi" [class.is-invalid]="isControlInvalid('soTinChi')" min="1" max="10" />
+            @if (isControlInvalid('soTinChi')) {
+              <small class="error-text">Số TC từ 1 trở lên.</small>
+            }
           </div>
 
           <div class="form-group">
             <label>Tiết LT <span class="req">*</span></label>
-            <input type="number" formControlName="soTietLyThuyet" min="0" />
+            <input type="number" formControlName="soTietLyThuyet" [class.is-invalid]="isControlInvalid('soTietLyThuyet')" min="0" />
+            @if (isControlInvalid('soTietLyThuyet')) {
+              <small class="error-text">Tiết LT ≥ 0.</small>
+            }
           </div>
 
           <div class="form-group">
             <label>Tiết TH <span class="req">*</span></label>
-            <input type="number" formControlName="soTietThucHanh" min="0" />
+            <input type="number" formControlName="soTietThucHanh" [class.is-invalid]="isControlInvalid('soTietThucHanh')" min="0" />
+            @if (isControlInvalid('soTietThucHanh')) {
+              <small class="error-text">Tiết TH ≥ 0.</small>
+            }
           </div>
         </div>
 
         <div class="form-group">
           <label>Khoa phụ trách <span class="req">*</span></label>
-          <select formControlName="khoaId">
+          <select formControlName="khoaId" [class.is-invalid]="isControlInvalid('khoaId')">
             <option value="">-- Chọn Khoa phụ trách --</option>
             @for (k of khoas; track k.id) {
               <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
             }
           </select>
-          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+          @if (isControlInvalid('khoaId')) {
             <small class="error-text">Vui lòng chọn Khoa phụ trách.</small>
           }
         </div>

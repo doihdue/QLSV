@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
+import { MonHocMo } from '../../services/student.service';
 
 export type DashboardCounts = {
   sinhVien: number;
@@ -30,14 +31,25 @@ export class SectionComponent implements OnInit {
     return this.authService.isStudent;
   }
 
+  protected get isLecturer(): boolean {
+    return this.authService.isLecturer;
+  }
+
+  protected get isAdmin(): boolean {
+    return this.authService.isAdmin;
+  }
+
   protected get currentUserName(): string {
     const name = this.authService.currentUser?.fullName;
     if (!name || name.includes('?')) {
-      return this.isStudent ? 'Sinh viên' : 'Quản trị hệ thống';
+      if (this.isStudent) return 'Sinh viên';
+      if (this.isLecturer) return 'Giảng viên';
+      return 'Quản trị hệ thống';
     }
     return name;
   }
 
+  // Admin stats
   protected counts: DashboardCounts = {
     sinhVien: 0,
     giangVien: 0,
@@ -46,12 +58,17 @@ export class SectionComponent implements OnInit {
     lop: 0,
     dangKy: 0,
   };
-
   protected loading = false;
 
+  // Lecturer stats
+  protected lecturerClasses: MonHocMo[] = [];
+  protected loadingLecturer = false;
+
   ngOnInit(): void {
-    if (!this.isStudent) {
+    if (this.isAdmin) {
       this.loadAdminStats();
+    } else if (this.isLecturer) {
+      this.loadLecturerClasses();
     }
   }
 
@@ -84,5 +101,23 @@ export class SectionComponent implements OnInit {
       },
     });
   }
-}
 
+  protected loadLecturerClasses(): void {
+    this.loadingLecturer = true;
+    this.http.get<MonHocMo[]>('http://localhost:8080/api/lecturer/mon-hoc-mo').pipe(
+      catchError(() => of([]))
+    ).subscribe({
+      next: (res) => {
+        this.lecturerClasses = (res || []).filter(
+          (c) => !!c.tenLop && c.tenLop.trim() !== '' && c.tenLop !== 'Tất cả' && c.tenLop !== 'Tất cả lớp'
+        );
+        this.loadingLecturer = false;
+        this.cd.detectChanges();
+      },
+      error: () => {
+        this.loadingLecturer = false;
+        this.cd.detectChanges();
+      },
+    });
+  }
+}

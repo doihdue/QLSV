@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
+import { ToastService } from '../../../services/toast.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 export type GiangVienItem = {
   id: number;
@@ -33,6 +35,8 @@ export class AdminGiangVienComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   protected giangViens: GiangVienItem[] = [];
   protected khoas: KhoaOption[] = [];
@@ -114,16 +118,42 @@ export class AdminGiangVienComponent implements OnInit {
     return this.filteredGiangViens.slice(start, start + this.pageSize);
   }
 
+  protected isControlInvalid(controlName: string): boolean {
+    const ctrl = this.form.get(controlName);
+    if (!ctrl) return false;
+    const isRequired = ctrl.hasValidator(Validators.required);
+    const isEmpty = !ctrl.value || (typeof ctrl.value === 'string' && !ctrl.value.trim());
+    return (ctrl.invalid || (isRequired && isEmpty)) && (ctrl.touched || ctrl.dirty);
+  }
+
   protected submit(): void {
-    if (this.form.invalid) {
+    const val = this.form.getRawValue();
+    const hoTen = val.hoTen?.trim();
+    const khoaId = val.khoaId;
+
+    if (!khoaId || !hoTen) {
       this.form.markAllAsTouched();
+      if (!khoaId && !hoTen) {
+        this.toastService.warning('Vui lòng chọn Khoa trực thuộc và nhập Họ tên giảng viên (các trường viền đỏ).', 'Thiếu thông tin bắt buộc');
+      } else if (!khoaId) {
+        this.toastService.warning('Vui lòng chọn Khoa trực thuộc cho giảng viên.', 'Thiếu thông tin');
+      } else {
+        this.toastService.warning('Vui lòng nhập Họ và tên giảng viên.', 'Thiếu thông tin');
+      }
+      this.cd.detectChanges();
       return;
     }
 
-    const val = this.form.getRawValue();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.toastService.warning('Vui lòng kiểm tra lại thông tin không hợp lệ.', 'Dữ liệu chưa đúng');
+      this.cd.detectChanges();
+      return;
+    }
+
     const payload = {
       maGiangVien: this.editingId === null ? undefined : (val.maGiangVien?.trim() || undefined),
-      hoTen: val.hoTen?.trim(),
+      hoTen: hoTen,
       email: this.editingId === null ? undefined : (val.email?.trim() || undefined),
       soDienThoai: val.soDienThoai?.trim() || null,
       hocVi: val.hocVi?.trim(),
@@ -133,8 +163,6 @@ export class AdminGiangVienComponent implements OnInit {
     };
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
 
     const req = this.editingId === null
       ? this.http.post<GiangVienItem>('http://localhost:8080/api/giang-vien', payload)
@@ -143,15 +171,17 @@ export class AdminGiangVienComponent implements OnInit {
     req.subscribe({
       next: () => {
         this.saving = false;
-        this.successMessage = this.editingId === null
+        const msg = this.editingId === null
           ? 'Thêm mới giảng viên thành công!'
           : 'Cập nhật giảng viên thành công!';
+        this.toastService.success(msg, 'Quản lý Giảng viên');
         this.loadGiangViens();
         this.resetForm();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Không thể lưu giảng viên. Kiểm tra mã GV và email.';
+        const errorMsg = this.toastService.extractError(err, 'Không thể lưu giảng viên. Kiểm tra lại thông tin nhập.');
+        this.toastService.error(errorMsg, 'Lỗi lưu giảng viên');
         this.cd.detectChanges();
       },
     });
@@ -169,25 +199,31 @@ export class AdminGiangVienComponent implements OnInit {
       khoaId: String(item.khoaId),
       active: item.active,
     });
-    this.errorMessage = '';
-    this.successMessage = '';
     this.cd.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  protected remove(item: GiangVienItem): void {
-    if (!confirm(`Bạn có chắc muốn xóa giảng viên ${item.hoTen} (${item.maGiangVien})?`)) {
+  protected async remove(item: GiangVienItem): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Xác nhận xóa giảng viên',
+      message: `Bạn có chắc muốn xóa giảng viên "${item.hoTen}" (${item.maGiangVien})?\n(Lưu ý: Không thể xóa nếu giảng viên đang có lớp giảng dạy hoặc cố vấn).`,
+      confirmText: 'Xóa giảng viên',
+      cancelText: 'Hủy bỏ',
+      type: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
     this.http.delete(`http://localhost:8080/api/giang-vien/${item.id}`).subscribe({
       next: () => {
         this.giangViens = this.giangViens.filter((x) => x.id !== item.id);
-        this.successMessage = `Đã xóa giảng viên ${item.maGiangVien} thành công.`;
+        this.toastService.success(`Đã xóa giảng viên ${item.maGiangVien} thành công.`, 'Xóa giảng viên');
         this.cd.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể xóa giảng viên này (có thể đang là cố vấn học tập cho một lớp).';
+      error: (err) => {
+        const msg = this.toastService.extractError(err, 'Không thể xóa giảng viên này (có thể đang là cố vấn học tập cho một lớp).');
+        this.toastService.error(msg, 'Lỗi xóa giảng viên');
         this.cd.detectChanges();
       },
     });

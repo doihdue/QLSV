@@ -7,15 +7,15 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record SinhVienRequest(
-        @Size(max = 20, message = "MSSV must be at most 20 characters") String mssv,
-        @NotBlank(message = "Ho ten is required") @Size(max = 150, message = "Ho ten must be at most 150 characters") String hoTen,
+        @Size(max = 20, message = "MSSV tối đa 20 ký tự") String mssv,
+        @NotBlank(message = "Họ và tên sinh viên là bắt buộc") @Size(max = 150, message = "Họ và tên tối đa 150 ký tự") String hoTen,
         LocalDate ngaySinh,
-        @Size(max = 10, message = "Gioi tinh must be at most 10 characters") String gioiTinh,
-        @Size(max = 150, message = "Email must be at most 150 characters") String email,
-        @Size(max = 20, message = "So dien thoai must be at most 20 characters") String soDienThoai,
-        @Size(max = 255, message = "Dia chi must be at most 255 characters") String diaChi,
+        @Size(max = 10, message = "Giới tính tối đa 10 ký tự") String gioiTinh,
+        @Size(max = 150, message = "Email tối đa 150 ký tự") String email,
+        @Size(max = 20, message = "Số điện thoại tối đa 20 ký tự") String soDienThoai,
+        @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự") String diaChi,
         LocalDate ngayNhapHoc,
-        @NotNull(message = "Lop id is required") Long lopId,
+        @NotNull(message = "Vui lòng chọn Lớp hành chính") Long lopId,
         Boolean active
 ) {
 }

@@ -1,5 +1,6 @@
 package com.demo.be.dto.message;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 public class NotificationEventMessage implements Serializable {
 
-    private String eventType; // GRADE_APPROVED, GRADE_REJECTED, GRADE_SUBMITTED
+    private String eventType; // GRADE_APPROVED, GRADE_REJECTED, GRADE_SUBMITTED, TEST_MESSAGE
     private Long monHocMoId;
     private String maMonHoc;
     private String tenMonHoc;
@@ -25,6 +26,7 @@ public class NotificationEventMessage implements Serializable {
     private String tenGiangVien;
     private List<String> studentMssvList;
     private String reason;
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 }

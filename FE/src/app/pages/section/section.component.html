@@ -1,4 +1,5 @@
 @if (isStudent) {
+  <!-- ==================== CỔNG THÔNG TIN SINH VIÊN ==================== -->
   <section class="section-page">
     <header class="section-hero">
       <div class="hero-copy">
@@ -59,8 +60,128 @@
       </div>
     </div>
   </section>
+} @else if (isLecturer) {
+  <!-- ==================== CỔNG THÔNG TIN GIẢNG VIÊN ==================== -->
+  <section class="section-page">
+    <header class="section-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Cổng thông tin Cán bộ Giảng viên</p>
+        <h1>Xin chào, Thầy/Cô {{ currentUserName }}!</h1>
+        <span>Chào mừng Thầy/Cô đến với Cổng quản lý giảng dạy & học vụ. Dưới đây là thông tin các lớp học phần được phân công trong kỳ này.</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="secondary-button" (click)="loadLecturerClasses()">⟳ Làm mới dữ liệu</button>
+      </div>
+    </header>
+
+    <!-- KPI Cards for Lecturer -->
+    <div class="stats-grid">
+      <article class="stat-card stat-accent">
+        <div class="stat-top">
+          <span>Lớp học phần phụ trách</span>
+          <span class="stat-icon">📚</span>
+        </div>
+        <h3>{{ lecturerClasses.length }}</h3>
+        <p>Lớp học phần được phân công giảng dạy</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Nhiệm vụ đào tạo</span>
+          <span class="stat-icon">✍️</span>
+        </div>
+        <h3 style="font-size: 1.15rem; margin-top: 4px; color: #166534;">Nhập điểm học phần</h3>
+        <p>Chuyên cần, Giữa kỳ, Cuối kỳ</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Quy trình phê duyệt</span>
+          <span class="stat-icon">⚖️</span>
+        </div>
+        <h3 style="font-size: 1.15rem; margin-top: 4px; color: #1e40af;">Gửi duyệt Admin</h3>
+        <p>Admin kiểm tra & công bố điểm</p>
+      </article>
+    </div>
+
+    <!-- Quick Access Hub to Lecturer Modules -->
+    <div class="admin-modules-panel">
+      <div class="panel-header">
+        <h2>Nhiệm vụ Đào tạo & Nhập điểm</h2>
+        <p>Truy cập vào danh sách lớp học phần được phân công để vào điểm hoặc kiểm tra danh sách sinh viên</p>
+      </div>
+
+      <div class="modules-grid">
+        <a routerLink="/giang-vien/lop-mon-hoc" class="module-card module-card-highlight">
+          <div class="module-icon">📋</div>
+          <div class="module-info">
+            <h4>Lớp học phần & Nhập điểm</h4>
+            <p>Vào điểm chuyên cần (10%), giữa kỳ (30%) và cuối kỳ (60%) cho sinh viên lớp học phần được phân công, gửi duyệt bảng điểm lên Ban Quản lý Đào tạo.</p>
+          </div>
+          <span class="module-link">Vào bảng điểm lớp học phần →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Classes Assigned List Overview -->
+    <div class="portal-notice-panel">
+      <div class="notice-header">
+        <h3>📚 Các lớp học phần được phân công giảng dạy ({{ lecturerClasses.length }})</h3>
+      </div>
+      @if (loadingLecturer) {
+        <div class="empty-state-notice">
+          <p>Đang tải danh sách lớp học phần...</p>
+        </div>
+      } @else if (lecturerClasses.length === 0) {
+        <div class="empty-state-notice">
+          <p>Hiện tại Thầy/Cô chưa được phân công lớp môn học nào trong học kỳ hiện tại.</p>
+          <small>Khi Phòng Đào tạo / Ban Quản lý mở môn và phân công, danh sách sẽ hiển thị tại đây.</small>
+        </div>
+      } @else {
+        <div class="assigned-classes-grid">
+          @for (cls of lecturerClasses; track cls.id) {
+            <div class="assigned-class-item">
+              <div class="class-item-top">
+                <span class="class-code">{{ cls.monHocMa }}</span>
+                <span class="class-tc">{{ cls.soTinChi }} tín chỉ</span>
+              </div>
+              <h4 class="class-title">{{ cls.tenMonHoc }}</h4>
+              <div class="class-meta">
+                <span>🏫 Lớp: <strong>{{ cls.tenLop || cls.maLop }}</strong></span>
+                <span>📅 Học kỳ {{ cls.hocKy }} - {{ cls.namHoc }}</span>
+              </div>
+              <a routerLink="/giang-vien/lop-mon-hoc" class="btn-entry-grade">Vào điểm lớp này →</a>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Notice / Security guidelines for Lecturer -->
+    <div class="portal-notice-panel">
+      <div class="notice-header">
+        <h3>ℹ Hướng dẫn & Quy định Học vụ dành cho Giảng viên</h3>
+      </div>
+      <div class="notice-list">
+        <div class="notice-item">
+          <span class="notice-tag tag-urgent">Quy định</span>
+          <div>
+            <strong>Thang điểm và Tỷ trọng đánh giá</strong>
+            <p>Thang điểm 10 theo quy chế học chế tín chỉ: Điểm Chuyên cần (10%), Điểm Giữa kỳ (30%), Điểm Cuối kỳ/Thi (60%). Bảng điểm cần hoàn thành đầy đủ cho 100% sinh viên trước khi gửi duyệt.</p>
+          </div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-tag tag-info">Bảo mật</span>
+          <div>
+            <strong>Phân quyền tài khoản Giảng viên</strong>
+            <p>Tài khoản Cán bộ Giảng viên chỉ có quyền truy cập vào các lớp học phần được Nhà trường phân công giảng dạy. Giảng viên không có quyền can thiệp vào các danh mục quản trị chung (Khoa, Lớp hành chính, Hồ sơ sinh viên toàn trường, Mở môn học).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 } @else {
-  <!-- ADMIN DASHBOARD -->
+  <!-- ==================== TỔNG QUAN QUẢN TRỊ VIÊN (ADMIN ONLY) ==================== -->
   <section class="section-page">
     <header class="section-hero">
       <div class="hero-copy">
@@ -69,7 +190,7 @@
         <span>Chào mừng Quản trị viên <strong>{{ currentUserName }}</strong>. Dưới đây là dữ liệu thực tế đang vận hành trong cơ sở dữ liệu.</span>
       </div>
       <div class="header-actions">
-        <button type="button" class="secondary-action" (click)="loadAdminStats()">⟳ Làm mới số liệu</button>
+        <button type="button" class="secondary-button" (click)="loadAdminStats()">⟳ Làm mới số liệu</button>
       </div>
     </header>
 

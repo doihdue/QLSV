@@ -4,6 +4,8 @@ import { ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Khoa, KhoaPayload, KhoaService } from '../../../services/khoa.service';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
+import { ToastService } from '../../../services/toast.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 @Component({
   selector: 'app-admin-khoa',
@@ -15,6 +17,8 @@ export class AdminKhoaComponent {
   private readonly fb = inject(FormBuilder);
   private readonly khoaService = inject(KhoaService);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly toastService = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   protected readonly form = this.fb.nonNullable.group({
     maKhoa: ['', [Validators.required, Validators.maxLength(20)]],
@@ -71,24 +75,49 @@ export class AdminKhoaComponent {
     return this.filteredKhoas.slice(start, start + this.pageSize);
   }
 
+  protected isControlInvalid(controlName: string): boolean {
+    const ctrl = this.form.get(controlName);
+    if (!ctrl) return false;
+    const isRequired = ctrl.hasValidator(Validators.required);
+    const isEmpty = !ctrl.value || (typeof ctrl.value === 'string' && !ctrl.value.trim());
+    return (ctrl.invalid || (isRequired && isEmpty)) && (ctrl.touched || ctrl.dirty);
+  }
+
   protected submit(): void {
-    if (this.form.invalid) {
+    const val = this.form.getRawValue();
+    const maKhoa = val.maKhoa?.trim();
+    const tenKhoa = val.tenKhoa?.trim();
+
+    if (!maKhoa || !tenKhoa) {
       this.form.markAllAsTouched();
+      this.toastService.warning('Vui lòng nhập đầy đủ Mã khoa và Tên khoa (các trường viền đỏ).', 'Thiếu thông tin bắt buộc');
+      this.changeDetector.detectChanges();
       return;
     }
 
-    const payload: KhoaPayload = this.form.getRawValue();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.toastService.warning('Vui lòng kiểm tra lại các trường thông tin không hợp lệ.', 'Dữ liệu chưa đúng');
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    const payload: KhoaPayload = {
+      ...val,
+      maKhoa: maKhoa,
+      tenKhoa: tenKhoa,
+      moTa: val.moTa?.trim() || '',
+    };
     const request = this.editingId === null
       ? this.khoaService.create(payload)
       : this.khoaService.update(this.editingId, payload);
 
     this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
     request.subscribe({
       next: (savedKhoa) => {
         this.saving = false;
-        this.successMessage = this.editingId === null ? 'Thêm mới Khoa thành công!' : 'Cập nhật Khoa thành công!';
+        const msg = this.editingId === null ? 'Thêm mới Khoa thành công!' : 'Cập nhật Khoa thành công!';
+        this.toastService.success(msg, 'Quản lý Khoa');
         this.khoas = this.editingId === null
           ? [...this.khoas, savedKhoa]
           : this.khoas.map((khoa) => (khoa.id === savedKhoa.id ? savedKhoa : khoa));
@@ -97,7 +126,8 @@ export class AdminKhoaComponent {
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Không thể lưu khoa. Kiểm tra mã khoa đã tồn tại.';
+        const msg = this.toastService.extractError(err, 'Không thể lưu khoa. Kiểm tra mã khoa đã tồn tại.');
+        this.toastService.error(msg, 'Lỗi lưu khoa');
         this.changeDetector.detectChanges();
       },
     });
@@ -111,25 +141,31 @@ export class AdminKhoaComponent {
       moTa: khoa.moTa ?? '',
       active: khoa.active,
     });
-    this.errorMessage = '';
-    this.successMessage = '';
     this.changeDetector.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  protected remove(khoa: Khoa): void {
-    if (!confirm(`Bạn có chắc muốn xóa khoa ${khoa.tenKhoa} (${khoa.maKhoa})?`)) {
+  protected async remove(khoa: Khoa): Promise<void> {
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Xác nhận xóa khoa',
+      message: `Bạn có chắc muốn xóa khoa "${khoa.tenKhoa}" (${khoa.maKhoa})?\n(Lưu ý: Không thể xóa nếu còn lớp hoặc môn học trực thuộc).`,
+      confirmText: 'Xóa khoa',
+      cancelText: 'Hủy bỏ',
+      type: 'danger',
+    });
+    if (!confirmed) {
       return;
     }
 
     this.khoaService.delete(khoa.id).subscribe({
       next: () => {
         this.khoas = this.khoas.filter((item) => item.id !== khoa.id);
-        this.successMessage = `Đã xóa khoa ${khoa.maKhoa} thành công.`;
+        this.toastService.success(`Đã xóa khoa ${khoa.maKhoa} thành công.`, 'Xóa khoa');
         this.changeDetector.detectChanges();
       },
-      error: () => {
-        this.errorMessage = 'Không thể xóa khoa này (có thể có lớp hoặc môn học đang trực thuộc khoa).';
+      error: (err) => {
+        const msg = this.toastService.extractError(err, 'Không thể xóa khoa này (có thể có lớp hoặc môn học đang trực thuộc khoa).');
+        this.toastService.error(msg, 'Lỗi xóa khoa');
         this.changeDetector.detectChanges();
       },
     });

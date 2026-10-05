@@ -17,12 +17,7 @@
     </span>
   </div>
 
-  @if (successMessage) {
-    <div class="alert alert-success">{{ successMessage }}</div>
-  }
-  @if (errorMessage) {
-    <div class="alert alert-danger">{{ errorMessage }}</div>
-  }
+
 
   <div class="admin-layout">
     <!-- Form Panel -->
@@ -35,21 +30,21 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
           <label>Thuộc Khoa <span class="req">*</span></label>
-          <select formControlName="khoaId">
+          <select formControlName="khoaId" [class.is-invalid]="isControlInvalid('khoaId')">
             <option value="">-- Chọn Khoa --</option>
             @for (k of khoas; track k.id) {
               <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
             }
           </select>
-          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+          @if (isControlInvalid('khoaId')) {
             <small class="error-text">Vui lòng chọn Khoa.</small>
           }
         </div>
 
         <div class="form-group">
           <label>Tên lớp hành chính <span class="req">*</span></label>
-          <input type="text" formControlName="tenLop" placeholder="VD: Hệ thống thông tin 1" />
-          @if (form.get('tenLop')?.touched && form.get('tenLop')?.invalid) {
+          <input type="text" formControlName="tenLop" [class.is-invalid]="isControlInvalid('tenLop')" placeholder="VD: Hệ thống thông tin 1" />
+          @if (isControlInvalid('tenLop')) {
             <small class="error-text">Tên lớp hành chính là bắt buộc.</small>
           }
         </div>
@@ -57,12 +52,12 @@
         <div class="form-row">
           <div class="form-group">
             <label>Niên khóa <span class="req">*</span></label>
-            <input type="text" formControlName="nienKhoa" placeholder="VD: 2023-2027" />
+            <input type="text" formControlName="nienKhoa" [class.is-invalid]="isControlInvalid('nienKhoa')" placeholder="VD: 2023-2027" />
           </div>
 
           <div class="form-group">
             <label>Sĩ số tối đa <span class="req">*</span></label>
-            <input type="number" formControlName="siSoToiDa" min="1" />
+            <input type="number" formControlName="siSoToiDa" [class.is-invalid]="isControlInvalid('siSoToiDa')" min="1" />
           </div>
         </div>
 

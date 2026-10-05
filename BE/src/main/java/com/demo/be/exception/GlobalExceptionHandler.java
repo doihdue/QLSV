@@ -17,21 +17,27 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
         List<String> details = exception.getBindingResult().getFieldErrors().stream()
-                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .map(fieldError -> fieldError.getDefaultMessage())
+                .filter(msg -> msg != null && !msg.isBlank())
+                .distinct()
                 .collect(Collectors.toList());
+
+        String mainMessage = details.isEmpty()
+                ? "Dữ liệu nhập vào không hợp lệ. Vui lòng kiểm tra lại."
+                : String.join("; ", details);
 
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed",
+                mainMessage,
                 details
         );
         return ResponseEntity.badRequest().body(response);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException exception) {
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(RuntimeException exception) {
         ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),

@@ -17,12 +17,7 @@
     </span>
   </div>
 
-  @if (successMessage) {
-    <div class="alert alert-success">{{ successMessage }}</div>
-  }
-  @if (errorMessage) {
-    <div class="alert alert-danger">{{ errorMessage }}</div>
-  }
+
 
   <div class="admin-layout">
     <!-- Form Panel -->
@@ -35,21 +30,21 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="form-group">
           <label>Khoa trực thuộc <span class="req">*</span></label>
-          <select formControlName="khoaId">
+          <select formControlName="khoaId" [class.is-invalid]="isControlInvalid('khoaId')">
             <option value="">-- Chọn Khoa --</option>
             @for (k of khoas; track k.id) {
               <option [value]="k.id">{{ k.tenKhoa }} ({{ k.maKhoa }})</option>
             }
           </select>
-          @if (form.get('khoaId')?.touched && form.get('khoaId')?.invalid) {
+          @if (isControlInvalid('khoaId')) {
             <small class="error-text">Vui lòng chọn Khoa công tác.</small>
           }
         </div>
 
         <div class="form-group">
           <label>Họ và tên <span class="req">*</span></label>
-          <input type="text" formControlName="hoTen" placeholder="VD: Đỗ Minh Duệ" />
-          @if (form.get('hoTen')?.touched && form.get('hoTen')?.invalid) {
+          <input type="text" formControlName="hoTen" [class.is-invalid]="isControlInvalid('hoTen')" placeholder="VD: Đỗ Minh Duệ" />
+          @if (isControlInvalid('hoTen')) {
             <small class="error-text">Họ tên là bắt buộc.</small>
           }
         </div>
