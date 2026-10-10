@@ -1,0 +1,320 @@
+<div class="student-drl-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Phiếu Tự Đánh Giá Điểm Rèn Luyện</h1>
+      <p class="subtitle">Sinh viên tự chấm điểm theo 5 tiêu chí chuẩn của trường và nộp cho Giảng viên chủ nhiệm</p>
+    </div>
+
+    <!-- Dot Selector -->
+    <div class="dot-selector">
+      <label for="studentDotSelect">Đợt rèn luyện:</label>
+      <select id="studentDotSelect" class="form-select" [(ngModel)]="selectedDotId" (ngModelChange)="onDotChange()">
+        <option *ngFor="let dot of dots" [value]="dot.id">
+          {{ dot.tenDot }} {{ dot.dangMo ? '🟢' : '🔴' }}
+        </option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Banner Notification -->
+  <div *ngIf="currentDot" class="period-banner" [class.closed]="!currentDot.dangMo">
+    <div class="banner-left">
+      <span class="banner-status-badge" [class.open]="currentDot.dangMo">
+        {{ currentDot.dangMo ? '🟢 Cổng đang mở' : '🔴 Cổng đã đóng' }}
+      </span>
+      <span class="banner-dates">
+        Thời hạn đánh giá: <strong>{{ currentDot.ngayBatDau }}</strong> đến <strong>{{ currentDot.ngayKetThuc }}</strong>
+      </span>
+    </div>
+    <div *ngIf="currentDot.ghiChu" class="banner-note">
+      💡 {{ currentDot.ghiChu }}
+    </div>
+  </div>
+
+  <!-- State Alert Alert Box -->
+  <div *ngIf="sheet" class="status-alert-box" [ngClass]="sheet.trangThai">
+    <div class="alert-icon">
+      <span *ngIf="sheet.trangThai === 'DA_DUYET'">🏆</span>
+      <span *ngIf="sheet.trangThai === 'CHO_ADMIN_DUYET'">⏳</span>
+      <span *ngIf="sheet.trangThai === 'CHO_GIANG_VIEN_DUYET'">📝</span>
+      <span *ngIf="sheet.trangThai === 'TU_CHOI'">⚠️</span>
+      <span *ngIf="sheet.trangThai === 'LUU_NHAP_SINH_VIEN'">💾</span>
+      <span *ngIf="sheet.trangThai === 'CHUA_DANH_GIA'">⚪</span>
+    </div>
+    <div class="alert-content">
+      <div class="alert-title">
+        Trạng thái: <strong>{{ sheet.trangThaiMoTa }}</strong>
+        <span *ngIf="sheet.diemTongKet !== null" class="official-score">
+          - Điểm chính thức: <strong>{{ sheet.diemTongKet }} điểm</strong> (Xếp loại: <strong>{{ sheet.xepLoai }}</strong>)
+        </span>
+      </div>
+      <div *ngIf="sheet.trangThai === 'TU_CHOI'" class="alert-detail text-danger">
+        Lý do từ chối / yêu cầu sửa: {{ sheet.nhanXetAdmin || 'Vui lòng kiểm tra lại điểm tự chấm và nộp lại.' }}
+      </div>
+      <div *ngIf="sheet.nhanXetGv" class="alert-detail">
+        Nhận xét của Giảng viên: "{{ sheet.nhanXetGv }}" (Điểm GV chấm: <strong>{{ sheet.tongDiemGv }}</strong> điểm)
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content: 2 Columns -->
+  <div class="main-layout">
+    <!-- Left Column: 5 Criteria Form -->
+    <div class="form-container card">
+      <div class="card-header">
+        <h3>5 Tiêu chí Đánh giá Rèn luyện (Tối đa 100 điểm)</h3>
+        <span *ngIf="isFormReadOnly" class="read-only-badge">🔒 Chế độ chỉ xem (Không thể chỉnh sửa)</span>
+      </div>
+
+      <form [formGroup]="form">
+        <!-- Criteria 1 -->
+        <div class="criterion-card">
+          <div class="criterion-header">
+            <div class="criterion-meta">
+              <span class="criterion-num">Tiêu chí 1</span>
+              <h4>Ý thức và kết quả học tập</h4>
+            </div>
+            <div class="score-input-wrap">
+              <input
+                type="number"
+                min="0"
+                max="20"
+                class="score-input"
+                formControlName="diemSvMuc1"
+                [readonly]="isFormReadOnly"
+              />
+              <span class="max-label">/ 20</span>
+            </div>
+          </div>
+          <p class="criterion-desc">
+            Đi học chuyên cần, đúng giờ, chuẩn bị bài tốt; không vi phạm quy chế thi cử; kết quả điểm trung bình học kỳ đạt chuẩn.
+          </p>
+          <div *ngIf="!isFormReadOnly" class="quick-buttons">
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc1', 20)">20 (Tối đa)</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc1', 18)">18</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc1', 15)">15</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc1', 10)">10</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc1', 0)">0</button>
+          </div>
+        </div>
+
+        <!-- Criteria 2 -->
+        <div class="criterion-card">
+          <div class="criterion-header">
+            <div class="criterion-meta">
+              <span class="criterion-num">Tiêu chí 2</span>
+              <h4>Ý thức chấp hành nội quy, quy chế</h4>
+            </div>
+            <div class="score-input-wrap">
+              <input
+                type="number"
+                min="0"
+                max="25"
+                class="score-input"
+                formControlName="diemSvMuc2"
+                [readonly]="isFormReadOnly"
+              />
+              <span class="max-label">/ 25</span>
+            </div>
+          </div>
+          <p class="criterion-desc">
+            Chấp hành tốt các quy định của Nhà trường, nội quy ký túc xá/cư trú, trật tự trị an, an toàn giao thông, nộp học phí đúng hạn.
+          </p>
+          <div *ngIf="!isFormReadOnly" class="quick-buttons">
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc2', 25)">25 (Tối đa)</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc2', 22)">22</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc2', 20)">20</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc2', 15)">15</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc2', 0)">0</button>
+          </div>
+        </div>
+
+        <!-- Criteria 3 -->
+        <div class="criterion-card">
+          <div class="criterion-header">
+            <div class="criterion-meta">
+              <span class="criterion-num">Tiêu chí 3</span>
+              <h4>Hoạt động phong trào, văn hóa, thể thao & tình nguyện</h4>
+            </div>
+            <div class="score-input-wrap">
+              <input
+                type="number"
+                min="0"
+                max="20"
+                class="score-input"
+                formControlName="diemSvMuc3"
+                [readonly]="isFormReadOnly"
+              />
+              <span class="max-label">/ 20</span>
+            </div>
+          </div>
+          <p class="criterion-desc">
+            Tham gia đầy đủ các buổi sinh hoạt chính trị, ngày hội tư vấn việc làm, phong trào tình nguyện hè, hiến máu nhân đạo, giải thể thao - văn nghệ.
+          </p>
+          <div *ngIf="!isFormReadOnly" class="quick-buttons">
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc3', 20)">20 (Tối đa)</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc3', 18)">18</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc3', 15)">15</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc3', 10)">10</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc3', 0)">0</button>
+          </div>
+        </div>
+
+        <!-- Criteria 4 -->
+        <div class="criterion-card">
+          <div class="criterion-header">
+            <div class="criterion-meta">
+              <span class="criterion-num">Tiêu chí 4</span>
+              <h4>Phẩm chất công dân và quan hệ cộng đồng</h4>
+            </div>
+            <div class="score-input-wrap">
+              <input
+                type="number"
+                min="0"
+                max="25"
+                class="score-input"
+                formControlName="diemSvMuc4"
+                [readonly]="isFormReadOnly"
+              />
+              <span class="max-label">/ 25</span>
+            </div>
+          </div>
+          <p class="criterion-desc">
+            Sống trung thực, văn minh, giữ gìn đoàn kết nội bộ, có tinh thần chia sẻ giúp đỡ bạn bè vượt khó, bảo vệ môi trường và tài sản chung.
+          </p>
+          <div *ngIf="!isFormReadOnly" class="quick-buttons">
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc4', 25)">25 (Tối đa)</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc4', 22)">22</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc4', 20)">20</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc4', 15)">15</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc4', 0)">0</button>
+          </div>
+        </div>
+
+        <!-- Criteria 5 -->
+        <div class="criterion-card">
+          <div class="criterion-header">
+            <div class="criterion-meta">
+              <span class="criterion-num">Tiêu chí 5</span>
+              <h4>Ý thức tham gia công tác lớp, đoàn thể & thành tích đặc biệt</h4>
+            </div>
+            <div class="score-input-wrap">
+              <input
+                type="number"
+                min="0"
+                max="10"
+                class="score-input"
+                formControlName="diemSvMuc5"
+                [readonly]="isFormReadOnly"
+              />
+              <span class="max-label">/ 10</span>
+            </div>
+          </div>
+          <p class="criterion-desc">
+            Là cán bộ lớp/đoàn hội hoàn thành nhiệm vụ, hoặc sinh viên có giấy khen, giải thưởng học thuật, nghiên cứu khoa học, thi đua các cấp.
+          </p>
+          <div *ngIf="!isFormReadOnly" class="quick-buttons">
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc5', 10)">10 (Tối đa)</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc5', 8)">8</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc5', 5)">5</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc5', 2)">2</button>
+            <button type="button" class="btn-quick" (click)="setMucScore('diemSvMuc5', 0)">0</button>
+          </div>
+        </div>
+
+        <!-- Student Evidence / Note Textarea -->
+        <div class="form-group notes-section">
+          <label for="ghiChuSv">Minh chứng hoặc ghi chú bổ sung (nếu có):</label>
+          <textarea
+            id="ghiChuSv"
+            rows="3"
+            class="form-control"
+            formControlName="ghiChuSv"
+            [readonly]="isFormReadOnly"
+            placeholder="Ghi rõ thành tích, chứng nhận hiến máu, hoạt động tình nguyện hoặc lý do cộng/trừ điểm..."
+          ></textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right Column: Summary & Sticky Action Card -->
+    <div class="sidebar-container">
+      <!-- Total Score Card -->
+      <div class="card summary-card">
+        <h3>Tổng Điểm Tự Chấm</h3>
+        <div class="score-display">
+          <span class="score-number">{{ liveTotalScore }}</span>
+          <span class="score-max">/ 100 điểm</span>
+        </div>
+
+        <div class="progress-bar-container">
+          <div
+            class="progress-fill"
+            [style.width.%]="liveTotalScore"
+            [class.high]="liveTotalScore >= 80"
+            [class.med]="liveTotalScore >= 65 && liveTotalScore < 80"
+            [class.low]="liveTotalScore < 65"
+          ></div>
+        </div>
+
+        <div class="rank-display">
+          Xếp loại dự kiến: <strong class="rank-highlight">{{ liveRank }}</strong>
+        </div>
+
+        <!-- Workflow Steps Tracker -->
+        <div class="workflow-steps">
+          <div class="step-item" [class.done]="sheet && sheet.trangThai !== 'CHUA_DANH_GIA'">
+            <div class="step-dot">1</div>
+            <div class="step-info">
+              <span class="step-title">Sinh viên tự chấm</span>
+              <span class="step-status">{{ sheet?.trangThai === 'CHUA_DANH_GIA' ? 'Chưa nộp' : 'Đã thực hiện' }}</span>
+            </div>
+          </div>
+          <div class="step-item" [class.done]="sheet && (sheet.trangThai === 'CHO_ADMIN_DUYET' || sheet.trangThai === 'DA_DUYET')">
+            <div class="step-dot">2</div>
+            <div class="step-info">
+              <span class="step-title">Giảng viên đánh giá</span>
+              <span class="step-status">
+                {{ sheet?.tongDiemGv !== null ? (sheet?.tongDiemGv + ' điểm') : 'Đang chờ' }}
+              </span>
+            </div>
+          </div>
+          <div class="step-item" [class.done]="sheet && sheet.trangThai === 'DA_DUYET'">
+            <div class="step-dot">3</div>
+            <div class="step-info">
+              <span class="step-title">Admin phê duyệt</span>
+              <span class="step-status">
+                {{ sheet?.trangThai === 'DA_DUYET' ? 'Đã duyệt xong' : 'Đang chờ' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions-group" *ngIf="!isFormReadOnly">
+          <button
+            type="button"
+            class="btn btn-outline w-100"
+            (click)="submitEvaluation('SAVE_DRAFT')"
+            [disabled]="submitting"
+          >
+            💾 Lưu bản nháp
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary w-100"
+            (click)="submitEvaluation('SUBMIT')"
+            [disabled]="submitting"
+          >
+            {{ submitting ? 'Đang gửi...' : '🚀 Nộp cho Giảng viên' }}
+          </button>
+        </div>
+
+        <div *ngIf="isFormReadOnly" class="readonly-notice">
+          ℹ️ Phiếu điểm đã được nộp hoặc đợt rèn luyện đã đóng. Bạn không thể thay đổi thông tin vào lúc này.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

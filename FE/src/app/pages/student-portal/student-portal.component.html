@@ -159,7 +159,11 @@
                   placeholder="example@student.edu.vn"
                 />
                 @if (profileForm.controls.email.touched && profileForm.controls.email.invalid) {
-                  <small class="field-error">Vui lòng nhập định dạng email hợp lệ.</small>
+                  @if (profileForm.controls.email.hasError('required')) {
+                    <small class="field-error">Email không được để trống.</small>
+                  } @else {
+                    <small class="field-error">Email không đúng định dạng (VD: example@student.edu.vn).</small>
+                  }
                 }
               </label>
 
@@ -168,8 +172,11 @@
                 <input
                   type="tel"
                   formControlName="soDienThoai"
-                  placeholder="0912 345 678"
+                  placeholder="0912345678"
                 />
+                @if (profileForm.controls.soDienThoai.touched && profileForm.controls.soDienThoai.invalid) {
+                  <small class="field-error">Số điện thoại không đúng định dạng (gồm 10 chữ số, VD: 0912345678 hoặc +84912345678).</small>
+                }
               </label>
             </div>
 

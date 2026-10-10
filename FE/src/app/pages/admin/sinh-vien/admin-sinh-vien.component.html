@@ -172,7 +172,11 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Ngày sinh</label>
-                <input type="date" formControlName="ngaySinh" [class.is-invalid]="isControlInvalid('ngaySinh') || form.hasError('dateRangeInvalid')" />
+                <input type="date" formControlName="ngaySinh"
+                  [class.is-invalid]="isControlInvalid('ngaySinh') || form.get('ngaySinh')?.hasError('futureDate') || form.hasError('dateRangeInvalid')" />
+                @if (form.get('ngaySinh')?.hasError('futureDate')) {
+                  <small class="error-text">Ngày sinh phải là ngày trong quá khứ.</small>
+                }
               </div>
 
               <div class="form-group">
@@ -187,14 +191,29 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label>Số điện thoại</label>
-                <input type="text" formControlName="soDienThoai" placeholder="0987654321" />
+                <label>Email liên hệ</label>
+                <input type="email" formControlName="email"
+                  [class.is-invalid]="isControlInvalid('email') || form.get('email')?.hasError('pattern')"
+                  placeholder="Để trống hệ thống sẽ tự động tạo" />
+                @if (form.get('email')?.hasError('pattern')) {
+                  <small class="error-text">Email không đúng định dạng (VD: example@stu.edu.vn).</small>
+                }
               </div>
 
               <div class="form-group">
-                <label>Địa chỉ thường trú</label>
-                <input type="text" formControlName="diaChi" placeholder="Quận / Huyện, Tỉnh / Thành phố" />
+                <label>Số điện thoại</label>
+                <input type="tel" formControlName="soDienThoai"
+                  [class.is-invalid]="isControlInvalid('soDienThoai') || form.get('soDienThoai')?.hasError('pattern')"
+                  placeholder="0987654321" />
+                @if (form.get('soDienThoai')?.hasError('pattern')) {
+                  <small class="error-text">Số điện thoại không đúng định dạng (gồm 10 chữ số, VD: 0987654321 hoặc +84987654321).</small>
+                }
               </div>
+            </div>
+
+            <div class="form-group">
+              <label>Địa chỉ thường trú</label>
+              <input type="text" formControlName="diaChi" placeholder="Quận / Huyện, Tỉnh / Thành phố" />
             </div>
 
             <div class="form-group">

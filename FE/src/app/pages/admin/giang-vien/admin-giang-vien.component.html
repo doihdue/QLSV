@@ -156,6 +156,28 @@
 
             <div class="form-row">
               <div class="form-group">
+                <label>Email liên hệ</label>
+                <input type="email" formControlName="email"
+                  [class.is-invalid]="isControlInvalid('email') || form.get('email')?.hasError('pattern')"
+                  placeholder="Để trống hệ thống sẽ tự sinh" />
+                @if (form.get('email')?.hasError('pattern')) {
+                  <small class="error-text">Email không đúng định dạng (VD: giangvien@stu.edu.vn).</small>
+                }
+              </div>
+
+              <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="tel" formControlName="soDienThoai"
+                  [class.is-invalid]="isControlInvalid('soDienThoai') || form.get('soDienThoai')?.hasError('pattern')"
+                  placeholder="0901234567" />
+                @if (form.get('soDienThoai')?.hasError('pattern')) {
+                  <small class="error-text">Số điện thoại không đúng định dạng (gồm 10 chữ số, VD: 0901234567 hoặc +84901234567).</small>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
                 <label>Học vị <span class="req">*</span></label>
                 <select formControlName="hocVi">
                   @for (hv of hocViOptions; track hv) {
@@ -165,14 +187,9 @@
               </div>
 
               <div class="form-group">
-                <label>Số điện thoại</label>
-                <input type="text" formControlName="soDienThoai" placeholder="0901234567" />
+                <label>Chuyên môn / Hướng nghiên cứu</label>
+                <input type="text" formControlName="chuyenMon" placeholder="VD: Trí tuệ nhân tạo, Mạng máy tính" />
               </div>
-            </div>
-
-            <div class="form-group">
-              <label>Chuyên môn / Hướng nghiên cứu</label>
-              <input type="text" formControlName="chuyenMon" placeholder="VD: Trí tuệ nhân tạo, Mạng máy tính" />
             </div>
 
             <div class="form-group">

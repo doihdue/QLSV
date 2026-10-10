@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PaginationComponent } from '../../../components/pagination/pagination.component';
+import { ReportService } from '../../../services/report.service';
+import { ToastService } from '../../../services/toast.service';
 
 export type SinhVienGpaItem = {
   sinhVienId: number;
@@ -31,6 +33,8 @@ export type LopOption = {
 export class ThongKeGpaComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly reportService = inject(ReportService);
+  private readonly toast = inject(ToastService);
 
   protected data: SinhVienGpaItem[] = [];
   protected lops: LopOption[] = [];
@@ -44,6 +48,7 @@ export class ThongKeGpaComponent implements OnInit {
   protected pageSize = 15;
 
   protected loading = false;
+  protected exportingPdf = false;
   protected errorMessage = '';
 
 
@@ -230,5 +235,92 @@ export class ThongKeGpaComponent implements OnInit {
 
   protected printPage(): void {
     window.print();
+  }
+
+  private pollTimeout: any = null;
+
+  // === Asynchronous JasperReports + RabbitMQ Export ===
+  protected exportPdfReport(): void {
+    if (this.exportingPdf) return;
+
+    const lopIdNum = this.selectedLopId ? Number(this.selectedLopId) : undefined;
+    this.exportingPdf = true;
+    this.cd.markForCheck();
+    this.cd.detectChanges();
+
+    this.reportService.requestExportGpa(lopIdNum).subscribe({
+      next: (res) => {
+        this.pollExportJob(res.jobId, 0);
+      },
+      error: (err) => {
+        this.exportingPdf = false;
+        this.toast.error('Lỗi', err.error?.message || 'Không thể gửi yêu cầu xuất báo cáo.');
+        this.cd.markForCheck();
+        this.cd.detectChanges();
+      },
+    });
+  }
+
+  private pollExportJob(jobId: string, attempt: number): void {
+    if (this.pollTimeout) {
+      clearTimeout(this.pollTimeout);
+      this.pollTimeout = null;
+    }
+
+    if (attempt > 30) {
+      this.exportingPdf = false;
+      this.toast.warning('Thông báo', 'Quá trình xuất báo cáo đang tiếp tục xử lý ngầm.');
+      this.cd.markForCheck();
+      this.cd.detectChanges();
+      return;
+    }
+
+    this.pollTimeout = setTimeout(() => {
+      this.reportService.getStatus(jobId).subscribe({
+        next: (job) => {
+          if (job.status === 'COMPLETED') {
+            this.toast.success('Thành công', 'Báo cáo PDF đã tạo hoàn tất! Đang tải file về máy...');
+            this.downloadReportFile(job.jobId, job.fileName || 'BaoCao_ThongKe_GPA.pdf');
+          } else if (job.status === 'FAILED') {
+            this.exportingPdf = false;
+            this.toast.error('Lỗi', job.errorMessage || 'Lỗi khi tạo báo cáo JasperReports.');
+            this.cd.markForCheck();
+            this.cd.detectChanges();
+          } else {
+            this.pollExportJob(jobId, attempt + 1);
+          }
+        },
+        error: () => {
+          this.exportingPdf = false;
+          this.cd.markForCheck();
+          this.cd.detectChanges();
+        },
+      });
+    }, 1200);
+  }
+
+  protected downloadReportFile(jobId: string, fileName: string): void {
+    this.reportService.downloadBlob(jobId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+
+        this.exportingPdf = false;
+        this.cd.markForCheck();
+        this.cd.detectChanges();
+      },
+      error: () => {
+        this.exportingPdf = false;
+        this.toast.error('Lỗi', 'Không thể tải file báo cáo.');
+        this.cd.markForCheck();
+        this.cd.detectChanges();
+      },
+    });
   }
 }

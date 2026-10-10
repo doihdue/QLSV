@@ -1,0 +1,19 @@
+# Compiled and target outputs
+**/target/
+**/dist/
+**/node_modules/
+.angular/
+
+# Generated reports storage
+BE/reports_storage/*.pdf
+!BE/reports_storage/.gitkeep
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db

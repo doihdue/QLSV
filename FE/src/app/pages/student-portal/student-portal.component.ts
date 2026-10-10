@@ -71,8 +71,8 @@ export class StudentPortalComponent implements OnInit {
   // Profile forms
   protected profile: StudentProfile | null = null;
   protected readonly profileForm = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    soDienThoai: ['', [Validators.pattern(/^[0-9+() -]{8,20}$/)]],
+    email: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)]],
+    soDienThoai: ['', [Validators.pattern(/^(0|\+84)[0-9]{9}$/)]],
     diaChi: [''],
   });
 

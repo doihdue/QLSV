@@ -1,17 +1,20 @@
 package com.demo.be.dto.sinhvien;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record StudentProfileUpdateRequest(
-        @NotBlank(message = "Email is required")
-        @Email(message = "Email is invalid")
-        @Size(max = 150, message = "Email must be at most 150 characters")
+        @NotBlank(message = "Email không được để trống")
+        @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$", message = "Email không đúng định dạng (VD: sinhvien@stu.edu.vn)")
+        @Size(max = 150, message = "Email tối đa 150 ký tự")
         String email,
-        @Size(max = 20, message = "So dien thoai must be at most 20 characters")
+
+        @Pattern(regexp = "^$|^(0|\\+84)[0-9]{9}$", message = "Số điện thoại không đúng định dạng (gồm 10 chữ số, ví dụ: 0912345678 hoặc +84912345678)")
+        @Size(max = 20, message = "Số điện thoại tối đa 20 ký tự")
         String soDienThoai,
-        @Size(max = 255, message = "Dia chi must be at most 255 characters")
+
+        @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")
         String diaChi
 ) {
 }

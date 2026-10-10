@@ -3,7 +3,7 @@ package com.demo.be.dto.auth;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginRequest(
-        @NotBlank(message = "Username is required") String username,
-        @NotBlank(message = "Password is required") String password
+        @NotBlank(message = "Tên đăng nhập là bắt buộc") String username,
+        @NotBlank(message = "Mật khẩu là bắt buộc") String password
 ) {
 }

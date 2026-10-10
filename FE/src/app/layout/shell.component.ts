@@ -174,6 +174,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       title: 'Học vụ & Thống kê',
       items: [
         { label: 'Phê duyệt điểm & Đăng ký', path: '/dao-tao/quan-ly-diem', icon: '⚖️' },
+        { label: 'Quản lý Điểm rèn luyện', path: '/dao-tao/diem-ren-luyen', icon: '🎖️' },
         { label: 'Thống kê', path: '/thong-ke/gpa', icon: '📈' },
       ],
     },
@@ -189,6 +190,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       items: [
         { label: 'Đăng ký môn học', path: '/sinh-vien/dang-ky-mon-hoc', icon: '✍️' },
         { label: 'Bảng điểm học tập', path: '/sinh-vien/bang-diem', icon: '📑' },
+        { label: 'Đánh giá Điểm rèn luyện', path: '/sinh-vien/diem-ren-luyen', icon: '🎖️' },
         { label: 'Hồ sơ cá nhân', path: '/sinh-vien/ho-so-ca-nhan', icon: '👤' },
       ],
     },
@@ -203,6 +205,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       title: 'Cổng Giảng viên',
       items: [
         { label: 'Lớp học phần & Nhập điểm', path: '/giang-vien/lop-mon-hoc', icon: '📋' },
+        { label: 'Đánh giá Điểm rèn luyện', path: '/giang-vien/diem-ren-luyen', icon: '🎖️' },
       ],
     },
   ];

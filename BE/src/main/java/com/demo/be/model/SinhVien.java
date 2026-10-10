@@ -1,6 +1,8 @@
 package com.demo.be.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.ColumnResult;
+import jakarta.persistence.ConstructorResult;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -8,11 +10,29 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SqlResultSetMapping;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "sinh_vien")
+@SqlResultSetMapping(
+        name = "SinhVienGpaMapping",
+        classes = @ConstructorResult(
+                targetClass = com.demo.be.dto.thongke.SinhVienGpaResponse.class,
+                columns = {
+                        @ColumnResult(name = "sinhVienId", type = Long.class),
+                        @ColumnResult(name = "mssv", type = String.class),
+                        @ColumnResult(name = "hoTen", type = String.class),
+                        @ColumnResult(name = "tenLop", type = String.class),
+                        @ColumnResult(name = "tenKhoa", type = String.class),
+                        @ColumnResult(name = "soMonHoc", type = Integer.class),
+                        @ColumnResult(name = "tinChiTichLuy", type = Integer.class),
+                        @ColumnResult(name = "diemTrungBinh", type = Double.class),
+                        @ColumnResult(name = "xepLoaiHocLuc", type = String.class)
+                }
+        )
+)
 public class SinhVien {
 
     @Id

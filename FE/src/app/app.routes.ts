@@ -54,6 +54,14 @@ export const routes: Routes = [
           import('./pages/admin/diem-dangky/admin-diem-dangky.component').then((m) => m.AdminDiemDangKyComponent),
       },
       {
+        path: 'dao-tao/diem-ren-luyen',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/admin/diem-ren-luyen/admin-diem-ren-luyen.component').then(
+            (m) => m.AdminDiemRenLuyenComponent
+          ),
+      },
+      {
         path: 'thong-ke/gpa',
         canActivate: [adminGuard],
         loadComponent: () =>
@@ -81,12 +89,28 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/student-portal/student-portal.component').then((m) => m.StudentPortalComponent),
       },
+      {
+        path: 'sinh-vien/diem-ren-luyen',
+        canActivate: [studentGuard],
+        loadComponent: () =>
+          import('./pages/student-portal/diem-ren-luyen/student-diem-ren-luyen.component').then(
+            (m) => m.StudentDiemRenLuyenComponent
+          ),
+      },
       // Cổng Giảng viên (Lecturer Only)
       {
         path: 'giang-vien/lop-mon-hoc',
         canActivate: [lecturerGuard],
         loadComponent: () =>
           import('./pages/lecturer/lecturer-diem.component').then((m) => m.LecturerDiemComponent),
+      },
+      {
+        path: 'giang-vien/diem-ren-luyen',
+        canActivate: [lecturerGuard],
+        loadComponent: () =>
+          import('./pages/lecturer/diem-ren-luyen/lecturer-diem-ren-luyen.component').then(
+            (m) => m.LecturerDiemRenLuyenComponent
+          ),
       },
     ],
   },

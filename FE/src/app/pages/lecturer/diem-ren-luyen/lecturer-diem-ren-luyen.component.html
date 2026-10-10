@@ -1,0 +1,304 @@
+<div class="lecturer-drl-page">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Đánh giá Điểm Rèn Luyện</h1>
+      <p class="subtitle">Đánh giá các tiêu chí rèn luyện của sinh viên lớp chủ nhiệm / cố vấn và chuyển Admin phê duyệt</p>
+    </div>
+  </header>
+
+  <!-- Controls & Filter Card -->
+  <div class="card drl-filter-card">
+    <div class="drl-filter-item">
+      <label for="selectDotGv">Đợt đánh giá rèn luyện:</label>
+      <select id="selectDotGv" class="form-select" [(ngModel)]="selectedDotId" (ngModelChange)="onDotOrLopChange()">
+        <option *ngFor="let dot of dots" [value]="dot.id">
+          {{ dot.tenDot }} (HK{{ dot.hocKy }} - {{ dot.namHoc }}) {{ dot.dangMo ? '🟢 [Đang mở]' : '🔴 [Đã đóng]' }}
+        </option>
+      </select>
+    </div>
+
+    <div class="drl-filter-item">
+      <label for="selectLopGv">Lớp hành chính:</label>
+      <select id="selectLopGv" class="form-select" [(ngModel)]="selectedLopId" (ngModelChange)="onDotOrLopChange()">
+        <option *ngFor="let lop of lops" [value]="lop.id">{{ lop.tenLop }} ({{ lop.maLop }})</option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" class="btn btn-outline" (click)="checkAndLoadScores()">
+        🔄 Tải lại
+      </button>
+      <button
+        *ngIf="selectedLopId"
+        type="button"
+        class="btn btn-outline"
+        (click)="exportPdfReport()"
+        [disabled]="exporting || sheets.length === 0"
+        title="Tạo báo cáo JasperReports và xử lý ngầm qua RabbitMQ"
+      >
+        {{ exporting ? '⏳ Đang tạo PDF...' : '📄 Xuất báo cáo PDF' }}
+      </button>
+      <button
+        *ngIf="selectedLopId"
+        type="button"
+        class="btn btn-primary"
+        (click)="submitWholeClass()"
+        [disabled]="submittingClass || sheets.length === 0"
+      >
+        {{ submittingClass ? 'Đang gửi...' : '🚀 Gửi toàn bộ lớp lên Admin duyệt' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Summary -->
+  <div class="metrics-row" *ngIf="sheets.length > 0">
+    <div class="metric-card">
+      <span class="metric-num">{{ totalStudents }}</span>
+      <span class="metric-label">Sĩ số lớp</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-num text-info">{{ svSubmittedCount }}</span>
+      <span class="metric-label">SV đã nộp tự đánh giá</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-num text-purple">{{ gvGradedCount }}</span>
+      <span class="metric-label">GV đã chấm</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-num text-success">{{ adminApprovedCount }}</span>
+      <span class="metric-label">Admin đã duyệt chính thức</span>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card table-card">
+    <div class="card-header">
+      <h3>Danh sách Đánh giá Sinh viên ({{ sheets.length }} SV)</h3>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Đang tải dữ liệu lớp...</p>
+    </div>
+
+    <div *ngIf="!loading && sheets.length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>Không có sinh viên nào trong lớp được chọn.</p>
+    </div>
+
+    <div *ngIf="!loading && sheets.length > 0" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>MSSV</th>
+            <th>Họ và tên</th>
+            <th class="text-center">SV Tự Chấm</th>
+            <th class="text-center">GV Chấm</th>
+            <th class="text-center">Điểm Duyệt</th>
+            <th>Nhận xét GV</th>
+            <th>Trạng thái</th>
+            <th class="text-center">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of sheets">
+            <td class="font-bold">{{ s.mssv }}</td>
+            <td>{{ s.hoTen }}</td>
+            <td class="text-center">
+              <span *ngIf="s.tongDiemSv !== null" class="score-badge sv-score">{{ s.tongDiemSv }}</span>
+              <span *ngIf="s.tongDiemSv === null" class="text-muted">Chưa nộp</span>
+            </td>
+            <td class="text-center">
+              <span *ngIf="s.tongDiemGv !== null" class="score-badge gv-score">{{ s.tongDiemGv }}</span>
+              <span *ngIf="s.tongDiemGv === null" class="text-muted">Chưa chấm</span>
+            </td>
+            <td class="text-center">
+              <span *ngIf="s.diemTongKet !== null" class="score-badge final-score">{{ s.diemTongKet }} ({{ s.xepLoai }})</span>
+              <span *ngIf="s.diemTongKet === null" class="text-muted">-</span>
+            </td>
+            <td>
+              <span class="truncate-text" [title]="s.nhanXetGv || ''">{{ s.nhanXetGv || '-' }}</span>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(s.trangThai)">{{ s.trangThaiMoTa }}</span>
+            </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn-action"
+                (click)="openEvaluateModal(s)"
+                [disabled]="s.trangThai === 'DA_DUYET'"
+              >
+                {{ s.trangThai === 'DA_DUYET' ? '🔒 Đã duyệt' : (s.tongDiemGv !== null ? '✏️ Sửa điểm' : '📝 Chấm điểm') }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal: Giảng viên chấm điểm -->
+  <div *ngIf="showModal && currentSheet" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3>Phiếu Đánh Giá Điểm Rèn Luyện</h3>
+          <p class="subtitle">
+            Sinh viên: <strong>{{ currentSheet.hoTen }}</strong> (MSSV: {{ currentSheet.mssv }}) - Lớp: <strong>{{ currentSheet.tenLop }}</strong>
+          </p>
+        </div>
+        <button type="button" class="btn-close" (click)="closeModal()">✕</button>
+      </div>
+
+      <form [formGroup]="evalForm">
+        <div class="modal-body">
+          <!-- Top Tool: Copy button & Student Note -->
+          <div class="eval-top-bar">
+            <button type="button" class="btn btn-outline" (click)="copyStudentPoints()">
+              📋 Sao chép nhanh điểm SV tự chấm
+            </button>
+            <div class="live-summary">
+              <span>Tổng điểm GV: <strong class="live-score">{{ currentLiveTotal }}</strong> / 100</span>
+              <span class="rank-pill">{{ currentLiveRank }}</span>
+            </div>
+          </div>
+
+          <!-- Criteria Input List -->
+          <div class="criteria-input-list">
+            <!-- Mục 1 -->
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>1. Ý thức học tập (Tối đa 20 điểm)</strong>
+                <span class="student-val">Sinh viên tự chấm: <strong>{{ currentSheet.diemSvMuc1 ?? 0 }}/20</strong></span>
+              </div>
+              <div class="criterion-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  class="form-control"
+                  formControlName="diemGvMuc1"
+                  placeholder="0 - 20"
+                />
+              </div>
+            </div>
+
+            <!-- Mục 2 -->
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>2. Ý thức chấp hành nội quy, quy chế trường (Tối đa 25 điểm)</strong>
+                <span class="student-val">Sinh viên tự chấm: <strong>{{ currentSheet.diemSvMuc2 ?? 0 }}/25</strong></span>
+              </div>
+              <div class="criterion-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="25"
+                  class="form-control"
+                  formControlName="diemGvMuc2"
+                  placeholder="0 - 25"
+                />
+              </div>
+            </div>
+
+            <!-- Mục 3 -->
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>3. Hoạt động chính trị - xã hội, văn hóa, thể thao, tình nguyện (Tối đa 20 điểm)</strong>
+                <span class="student-val">Sinh viên tự chấm: <strong>{{ currentSheet.diemSvMuc3 ?? 0 }}/20</strong></span>
+              </div>
+              <div class="criterion-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  class="form-control"
+                  formControlName="diemGvMuc3"
+                  placeholder="0 - 20"
+                />
+              </div>
+            </div>
+
+            <!-- Mục 4 -->
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>4. Phẩm chất công dân và quan hệ cộng đồng (Tối đa 25 điểm)</strong>
+                <span class="student-val">Sinh viên tự chấm: <strong>{{ currentSheet.diemSvMuc4 ?? 0 }}/25</strong></span>
+              </div>
+              <div class="criterion-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="25"
+                  class="form-control"
+                  formControlName="diemGvMuc4"
+                  placeholder="0 - 25"
+                />
+              </div>
+            </div>
+
+            <!-- Mục 5 -->
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>5. Ý thức tham gia công tác lớp, đoàn thể, khen thưởng (Tối đa 10 điểm)</strong>
+                <span class="student-val">Sinh viên tự chấm: <strong>{{ currentSheet.diemSvMuc5 ?? 0 }}/10</strong></span>
+              </div>
+              <div class="criterion-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  class="form-control"
+                  formControlName="diemGvMuc5"
+                  placeholder="0 - 10"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Student note view -->
+          <div *ngIf="currentSheet.ghiChuSv" class="student-note-card">
+            <span class="note-label">📝 Minh chứng / Ghi chú của Sinh viên:</span>
+            <p class="note-text">{{ currentSheet.ghiChuSv }}</p>
+          </div>
+
+          <!-- Lecturer remarks input -->
+          <div class="form-group">
+            <label for="nhanXetGv">Nhận xét của Giảng viên:</label>
+            <textarea
+              id="nhanXetGv"
+              rows="3"
+              class="form-control"
+              formControlName="nhanXetGv"
+              placeholder="Nhập nhận xét về ý thức học tập và rèn luyện của sinh viên..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeModal()" [disabled]="saving">
+            Đóng
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="saveEvaluation('SAVE_DRAFT')"
+            [disabled]="saving"
+          >
+            💾 Lưu nháp
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="saveEvaluation('SUBMIT_ADMIN')"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Đang gửi...' : '🚀 Gửi lên Admin duyệt' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

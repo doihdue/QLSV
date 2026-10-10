@@ -25,6 +25,9 @@ public class RabbitMQConfig {
     public static final String ROUTING_KEY_PATTERN = "qlsv.notification.#";
     public static final String ROUTING_KEY_GRADE = "qlsv.notification.grade";
 
+    public static final String REPORT_QUEUE_NAME = "qlsv.report.queue";
+    public static final String ROUTING_KEY_REPORT = "qlsv.report.export";
+
     @Bean
     public TopicExchange qlsvExchange() {
         return new TopicExchange(EXCHANGE_NAME, true, false);
@@ -38,6 +41,16 @@ public class RabbitMQConfig {
     @Bean
     public Binding notificationBinding(Queue notificationQueue, TopicExchange qlsvExchange) {
         return BindingBuilder.bind(notificationQueue).to(qlsvExchange).with(ROUTING_KEY_PATTERN);
+    }
+
+    @Bean
+    public Queue reportQueue() {
+        return new Queue(REPORT_QUEUE_NAME, true);
+    }
+
+    @Bean
+    public Binding reportBinding(Queue reportQueue, TopicExchange qlsvExchange) {
+        return BindingBuilder.bind(reportQueue).to(qlsvExchange).with(ROUTING_KEY_REPORT);
     }
 
     @Bean

@@ -1,0 +1,592 @@
+<div class="drl-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="title-group">
+      <h1>Quản lý Điểm Rèn Luyện</h1>
+      <p class="subtitle">Mở đợt đánh giá, kiểm duyệt bảng điểm sinh viên và giảng viên, thống kê phân loại</p>
+    </div>
+    <div class="tab-nav">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'evaluations'"
+        (click)="activeTab = 'evaluations'"
+      >
+        <span class="tab-icon">📋</span> Phê duyệt & Đánh giá
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'periods'"
+        (click)="activeTab = 'periods'"
+      >
+        <span class="tab-icon">⚙️</span> Cấu hình Đợt ĐRL
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        (click)="openHistoryModal()"
+        title="Xem danh sách các báo cáo đã tạo ngầm"
+      >
+        <span class="tab-icon">📜</span> Lịch sử báo cáo
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================== -->
+  <!-- TAB 1: PHÊ DUYỆT & ĐÁNH GIÁ -->
+  <!-- ============================================================== -->
+  <section *ngIf="activeTab === 'evaluations'" class="tab-content">
+    <!-- Filter Control Card -->
+    <div class="card drl-filter-card">
+      <div class="drl-filter-item dot-select-item">
+        <label for="selectDot">Đợt đánh giá:</label>
+        <select id="selectDot" class="form-select" [(ngModel)]="selectedDotId" (ngModelChange)="onDotChange()">
+          <option *ngFor="let dot of dots" [value]="dot.id">
+            {{ dot.tenDot }} (HK{{ dot.hocKy }} - {{ dot.namHoc }}) {{ dot.dangMo ? '🟢 [Đang mở]' : '🔴 [Đóng]' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="drl-filter-item">
+        <label for="selectLop">Lớp hành chính:</label>
+        <select id="selectLop" class="form-select" [(ngModel)]="selectedLopId" (ngModelChange)="onLopChange()">
+          <option [ngValue]="null">-- Tất cả các lớp --</option>
+          <option *ngFor="let lop of lops" [value]="lop.id">{{ lop.tenLop }} ({{ lop.maLop }})</option>
+        </select>
+      </div>
+
+      <div class="drl-filter-item">
+        <label for="selectTrangThai">Trạng thái:</label>
+        <select id="selectTrangThai" class="form-select" [(ngModel)]="selectedTrangThai" (ngModelChange)="onTrangThaiChange()">
+          <option value="ALL">-- Tất cả trạng thái --</option>
+          <option value="CHO_ADMIN_DUYET">⏳ Chờ Admin duyệt</option>
+          <option value="CHO_GIANG_VIEN_DUYET">📝 Chờ Giảng viên duyệt</option>
+          <option value="DA_DUYET">✅ Đã phê duyệt</option>
+          <option value="TU_CHOI">❌ Từ chối / Yêu cầu sửa</option>
+          <option value="CHUA_DANH_GIA">⚪ Chưa đánh giá</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="loadSheetsAndStats()"
+          title="Tải lại danh sách"
+        >
+          🔄 Làm mới
+        </button>
+        <button
+          *ngIf="selectedLopId"
+          type="button"
+          class="btn btn-outline"
+          (click)="exportPdfReport()"
+          [disabled]="exporting"
+          title="Xuất báo cáo PDF bằng JasperReports kết hợp RabbitMQ"
+        >
+          {{ exporting ? '⏳ Đang tạo PDF...' : '📄 Xuất báo cáo PDF' }}
+        </button>
+        <button
+          *ngIf="selectedLopId"
+          type="button"
+          class="btn btn-primary"
+          (click)="approveWholeClass()"
+          title="Duyệt điểm cho tất cả sinh viên đang chờ duyệt trong lớp"
+        >
+          ⚡ Duyệt toàn bộ lớp
+        </button>
+      </div>
+    </div>
+
+    <!-- Statistics Dashboard Cards -->
+    <div *ngIf="thongKe" class="stats-grid">
+      <div class="stat-card total-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+          <span class="stat-value">{{ thongKe.tongSinhVien }}</span>
+          <span class="stat-label">Tổng số sinh viên</span>
+        </div>
+      </div>
+
+      <div class="stat-card warning-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-info">
+          <span class="stat-value text-warning">{{ thongKe.choAdminDuyet }}</span>
+          <span class="stat-label">Chờ Admin duyệt</span>
+        </div>
+      </div>
+
+      <div class="stat-card info-card">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-info">
+          <span class="stat-value text-info">{{ thongKe.choGiangVienDuyet }}</span>
+          <span class="stat-label">Chờ GV đánh giá</span>
+        </div>
+      </div>
+
+      <div class="stat-card success-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-info">
+          <span class="stat-value text-success">{{ thongKe.daDuyet }}</span>
+          <span class="stat-label">Đã phê duyệt</span>
+        </div>
+      </div>
+
+      <div class="stat-card avg-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info">
+          <span class="stat-value text-purple">{{ thongKe.diemTrungBinhToanLop | number: '1.1-2' }}</span>
+          <span class="stat-label">Điểm TB rèn luyện</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranks Distribution Bar -->
+    <div *ngIf="thongKe && thongKe.daDuyet > 0" class="card ranks-summary-card">
+      <div class="ranks-header">
+        <h4>Phân loại kết quả (Đã duyệt: {{ thongKe.daDuyet }} SV)</h4>
+      </div>
+      <div class="rank-badges-row">
+        <span class="rank-pill rank-xs">Xuất sắc (≥90): <strong>{{ thongKe.countXuatSac }}</strong></span>
+        <span class="rank-pill rank-tot">Tốt (80-89): <strong>{{ thongKe.countTot }}</strong></span>
+        <span class="rank-pill rank-kha">Khá (65-79): <strong>{{ thongKe.countKha }}</strong></span>
+        <span class="rank-pill rank-tb">Trung bình (50-64): <strong>{{ thongKe.countTrungBinh }}</strong></span>
+        <span class="rank-pill rank-yeu">Yếu (35-49): <strong>{{ thongKe.countYeu }}</strong></span>
+        <span class="rank-pill rank-kem">Kém (&lt;35): <strong>{{ thongKe.countKem }}</strong></span>
+      </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="card table-card">
+      <div class="card-header">
+        <h3>Danh sách Bảng điểm rèn luyện ({{ sheets.length }} sinh viên)</h3>
+      </div>
+
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Đang tải dữ liệu điểm rèn luyện...</p>
+      </div>
+
+      <div *ngIf="!loading && sheets.length === 0" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>Không tìm thấy bảng điểm nào phù hợp với bộ lọc hiện tại.</p>
+      </div>
+
+      <div *ngIf="!loading && sheets.length > 0" class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>MSSV</th>
+              <th>Họ và tên</th>
+              <th>Lớp</th>
+              <th class="text-center">SV Chấm</th>
+              <th class="text-center">GV Chấm</th>
+              <th class="text-center">Điểm Chốt</th>
+              <th class="text-center">Xếp loại</th>
+              <th>Trạng thái</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of sheets">
+              <td class="font-bold">{{ s.mssv }}</td>
+              <td>{{ s.hoTen }}</td>
+              <td><span class="tag">{{ s.tenLop }}</span></td>
+              <td class="text-center">
+                <span *ngIf="s.tongDiemSv !== null" class="score-badge sv-score">{{ s.tongDiemSv }}</span>
+                <span *ngIf="s.tongDiemSv === null" class="text-muted">-</span>
+              </td>
+              <td class="text-center">
+                <span *ngIf="s.tongDiemGv !== null" class="score-badge gv-score">{{ s.tongDiemGv }}</span>
+                <span *ngIf="s.tongDiemGv === null" class="text-muted">-</span>
+              </td>
+              <td class="text-center">
+                <span *ngIf="s.diemTongKet !== null" class="score-badge final-score">{{ s.diemTongKet }}</span>
+                <span *ngIf="s.diemTongKet === null" class="text-muted">-</span>
+              </td>
+              <td class="text-center">
+                <span *ngIf="s.xepLoai" class="rank-tag" [ngClass]="getXepLoaiClass(s.xepLoai)">{{ s.xepLoai }}</span>
+                <span *ngIf="!s.xepLoai" class="text-muted">-</span>
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(s.trangThai)">{{ s.trangThaiMoTa }}</span>
+              </td>
+              <td class="text-center">
+                <button
+                  type="button"
+                  class="btn-action"
+                  (click)="openApproveModal(s)"
+                  [title]="s.trangThai === 'CHO_ADMIN_DUYET' ? 'Phê duyệt phiếu rèn luyện' : 'Xem chi tiết'"
+                >
+                  {{ s.trangThai === 'CHO_ADMIN_DUYET' ? '⚖️ Phê duyệt' : '👁️ Chi tiết' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- TAB 2: CẤU HÌNH ĐỢT RÈN LUYỆN -->
+  <!-- ============================================================== -->
+  <section *ngIf="activeTab === 'periods'" class="tab-content">
+    <div class="card">
+      <div class="card-header action-header">
+        <div>
+          <h3>Danh sách các Đợt đánh giá rèn luyện</h3>
+          <p class="subtitle">Quản lý thời gian bắt đầu, hạn chót và trạng thái mở/đóng cổng rèn luyện</p>
+        </div>
+        <button type="button" class="btn btn-primary" (click)="openNewDotModal()">
+          + Mở đợt rèn luyện mới
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên đợt rèn luyện</th>
+              <th>Học kỳ</th>
+              <th>Năm học</th>
+              <th>Ngày bắt đầu</th>
+              <th>Ngày kết thúc</th>
+              <th class="text-center">Trạng thái cổng</th>
+              <th class="text-center">Thời hạn</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dot of dots">
+              <td>#{{ dot.id }}</td>
+              <td class="font-bold">{{ dot.tenDot }}</td>
+              <td>Học kỳ {{ dot.hocKy }}</td>
+              <td>{{ dot.namHoc }}</td>
+              <td>{{ dot.ngayBatDau }}</td>
+              <td>{{ dot.ngayKetThuc }}</td>
+              <td class="text-center">
+                <button
+                  type="button"
+                  class="toggle-status-btn"
+                  [class.open]="dot.dangMo"
+                  (click)="toggleDotStatus(dot)"
+                >
+                  {{ dot.dangMo ? '🟢 Đang mở' : '🔴 Đã đóng' }}
+                </button>
+              </td>
+              <td class="text-center">
+                <span *ngIf="dot.trangThaiThoiGian === 'ACTIVE'" class="time-badge active">Đang diễn ra</span>
+                <span *ngIf="dot.trangThaiThoiGian === 'NOT_YET'" class="time-badge pending">Chưa tới hạn</span>
+                <span *ngIf="dot.trangThaiThoiGian === 'EXPIRED'" class="time-badge expired">Đã hết hạn</span>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn-action" (click)="openEditDotModal(dot)">
+                  ✏️ Chỉnh sửa
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: PHÊ DUYỆT BẢNG ĐIỂM CHI TIẾT -->
+  <!-- ============================================================== -->
+  <div *ngIf="showApproveModal && selectedSheet" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3>Chi tiết & Phê duyệt Điểm Rèn Luyện</h3>
+          <p class="subtitle">
+            Sinh viên: <strong>{{ selectedSheet.hoTen }}</strong> (MSSV: {{ selectedSheet.mssv }}) - Lớp: <strong>{{ selectedSheet.tenLop }}</strong>
+          </p>
+        </div>
+        <button type="button" class="btn-close" (click)="closeApproveModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Criteria Comparison Table -->
+        <table class="criteria-table">
+          <thead>
+            <tr>
+              <th style="width: 50%;">Nội dung tiêu chí rèn luyện</th>
+              <th class="text-center" style="width: 15%;">Mức tối đa</th>
+              <th class="text-center" style="width: 17%;">SV tự chấm</th>
+              <th class="text-center" style="width: 18%;">GV chấm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>1. Ý thức học tập</strong>
+                <div class="criterion-desc">Đi học chuyên cần, thái độ học tập, kết quả điểm tích lũy học kỳ</div>
+              </td>
+              <td class="text-center max-score">20 điểm</td>
+              <td class="text-center font-bold">{{ selectedSheet.diemSvMuc1 ?? '-' }}</td>
+              <td class="text-center font-bold text-primary">{{ selectedSheet.diemGvMuc1 ?? '-' }}</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>2. Ý thức chấp hành nội quy, quy chế</strong>
+                <div class="criterion-desc">Thực hiện quy định trường lớp, quy chế thi, không vi phạm kỷ luật</div>
+              </td>
+              <td class="text-center max-score">25 điểm</td>
+              <td class="text-center font-bold">{{ selectedSheet.diemSvMuc2 ?? '-' }}</td>
+              <td class="text-center font-bold text-primary">{{ selectedSheet.diemGvMuc2 ?? '-' }}</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>3. Hoạt động chính trị - xã hội, văn hóa, thể thao</strong>
+                <div class="criterion-desc">Tham gia phong trào Đoàn - Hội, văn nghệ, thể thao, tình nguyện hè</div>
+              </td>
+              <td class="text-center max-score">20 điểm</td>
+              <td class="text-center font-bold">{{ selectedSheet.diemSvMuc3 ?? '-' }}</td>
+              <td class="text-center font-bold text-primary">{{ selectedSheet.diemGvMuc3 ?? '-' }}</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>4. Phẩm chất công dân và quan hệ cộng đồng</strong>
+                <div class="criterion-desc">Lối sống lành mạnh, tinh thần tương trợ bạn bè, chấp hành pháp luật</div>
+              </td>
+              <td class="text-center max-score">25 điểm</td>
+              <td class="text-center font-bold">{{ selectedSheet.diemSvMuc4 ?? '-' }}</td>
+              <td class="text-center font-bold text-primary">{{ selectedSheet.diemGvMuc4 ?? '-' }}</td>
+            </tr>
+            <tr>
+              <td>
+                <strong>5. Ý thức tham gia công tác lớp, đoàn thể</strong>
+                <div class="criterion-desc">Ban cán sự lớp, BCH Đoàn Hội, đạt thành tích thi đua khen thưởng</div>
+              </td>
+              <td class="text-center max-score">10 điểm</td>
+              <td class="text-center font-bold">{{ selectedSheet.diemSvMuc5 ?? '-' }}</td>
+              <td class="text-center font-bold text-primary">{{ selectedSheet.diemGvMuc5 ?? '-' }}</td>
+            </tr>
+            <tr class="total-row">
+              <td><strong>TỔNG ĐIỂM ĐÁNH GIÁ (0 - 100)</strong></td>
+              <td class="text-center max-score">100 điểm</td>
+              <td class="text-center total-sv">{{ selectedSheet.tongDiemSv ?? 0 }}</td>
+              <td class="text-center total-gv">{{ selectedSheet.tongDiemGv ?? '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Feedback & Notes Row -->
+        <div class="feedback-grid">
+          <div class="feedback-box">
+            <span class="feedback-title">📝 Ghi chú của Sinh viên:</span>
+            <p class="feedback-content">{{ selectedSheet.ghiChuSv || '(Không có ghi chú)' }}</p>
+          </div>
+          <div class="feedback-box">
+            <span class="feedback-title">👨‍🏫 Nhận xét của Giảng viên {{ selectedSheet.hoTenGiangVien ? '(' + selectedSheet.hoTenGiangVien + ')' : '' }}:</span>
+            <p class="feedback-content">{{ selectedSheet.nhanXetGv || '(Chưa có nhận xét của giảng viên)' }}</p>
+          </div>
+        </div>
+
+        <!-- Admin Decision Area -->
+        <div class="admin-decision-card">
+          <h4>Ý kiến & Phê duyệt của Quản trị viên</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="adminDiem">Điểm rèn luyện chốt chính thức (0 - 100):</label>
+              <input
+                id="adminDiem"
+                type="number"
+                min="0"
+                max="100"
+                class="form-control"
+                [(ngModel)]="adminDiemDieuChinh"
+                placeholder="Để trống sẽ lấy điểm của GV chấm"
+              />
+              <small class="form-hint">Nếu không chỉnh sửa, hệ thống sẽ chốt điểm Giảng viên chấm.</small>
+            </div>
+            <div class="form-group flex-2">
+              <label for="adminNhanXet">Nhận xét / Lý do (Bắt buộc nếu Từ chối):</label>
+              <textarea
+                id="adminNhanXet"
+                rows="2"
+                class="form-control"
+                [(ngModel)]="adminNhanXet"
+                placeholder="Nhập nhận xét hoặc lý do yêu cầu đánh giá lại..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeApproveModal()" [disabled]="approving">
+          Đóng
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          (click)="submitApproval('REJECT')"
+          [disabled]="approving"
+        >
+          ❌ Từ chối / Chấm lại
+        </button>
+        <button
+          type="button"
+          class="btn btn-success"
+          (click)="submitApproval('APPROVE')"
+          [disabled]="approving"
+        >
+          {{ approving ? 'Đang duyệt...' : '✅ Phê duyệt kết quả' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: TẠO / SỬA ĐỢT RÈN LUYỆN -->
+  <!-- ============================================================== -->
+  <div *ngIf="showDotModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>{{ editingDotId ? 'Cập nhật Đợt Rèn Luyện' : 'Mở Đợt Đánh Giá Rèn Luyện Mới' }}</h3>
+        <button type="button" class="btn-close" (click)="closeDotModal()">✕</button>
+      </div>
+
+      <form [formGroup]="dotForm" (ngSubmit)="saveDot()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="tenDot">Tên đợt đánh giá: <span class="required">*</span></label>
+            <input id="tenDot" type="text" class="form-control" formControlName="tenDot" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hocKy">Học kỳ: <span class="required">*</span></label>
+              <select id="hocKy" class="form-select" formControlName="hocKy">
+                <option value="1">Học kỳ 1</option>
+                <option value="2">Học kỳ 2</option>
+                <option value="3">Học kỳ Hè</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="namHoc">Năm học: <span class="required">*</span></label>
+              <input id="namHoc" type="text" class="form-control" formControlName="namHoc" placeholder="2026-2027" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ngayBatDau">Ngày bắt đầu: <span class="required">*</span></label>
+              <input id="ngayBatDau" type="date" class="form-control" formControlName="ngayBatDau" />
+            </div>
+            <div class="form-group">
+              <label for="ngayKetThuc">Ngày kết thúc: <span class="required">*</span></label>
+              <input id="ngayKetThuc" type="date" class="form-control" formControlName="ngayKetThuc" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ghiChu">Ghi chú / Thông báo hướng dẫn:</label>
+            <textarea id="ghiChu" rows="2" class="form-control" formControlName="ghiChu"></textarea>
+          </div>
+
+          <div class="form-check">
+            <input id="dangMo" type="checkbox" formControlName="dangMo" />
+            <label for="dangMo">Kích hoạt mở cổng ngay sau khi lưu</label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeDotModal()" [disabled]="savingDot">
+            Hủy
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="savingDot">
+            {{ savingDot ? 'Đang lưu...' : 'Lưu đợt rèn luyện' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: LỊCH SỬ XUẤT BÁO CÁO (RABBITMQ + JASPERREPORTS) -->
+  <!-- ============================================================== -->
+  <div *ngIf="showHistoryModal" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3>Lịch Sử Xuất Báo Cáo (JasperReports & RabbitMQ)</h3>
+          <p class="subtitle">Các báo cáo được xử lý ngầm, có thể tải về trực tiếp bất cứ lúc nào</p>
+        </div>
+        <button type="button" class="btn-close" (click)="closeHistoryModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="loadingHistory" class="loading-state">
+          <div class="spinner"></div>
+          <p>Đang tải lịch sử báo cáo...</p>
+        </div>
+
+        <div *ngIf="!loadingHistory && reportHistory.length === 0" class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>Chưa có báo cáo nào được xuất trong hệ thống.</p>
+        </div>
+
+        <div *ngIf="!loadingHistory && reportHistory.length > 0" class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tên báo cáo</th>
+                <th>Người yêu cầu</th>
+                <th>Thời gian tạo</th>
+                <th class="text-center">Kích thước</th>
+                <th class="text-center">Trạng thái</th>
+                <th class="text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let job of reportHistory">
+                <td class="font-bold">
+                  {{ job.title }}
+                  <div *ngIf="job.fileName" class="text-muted" style="font-size: 0.76rem;">{{ job.fileName }}</div>
+                </td>
+                <td>{{ job.requestedBy }}</td>
+                <td>{{ job.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                <td class="text-center">
+                  {{ job.fileSize ? (job.fileSize / 1024 | number: '1.0-1') + ' KB' : '-' }}
+                </td>
+                <td class="text-center">
+                  <span
+                    class="status-badge"
+                    [class.badge-success]="job.status === 'COMPLETED'"
+                    [class.badge-warning]="job.status === 'PROCESSING' || job.status === 'PENDING'"
+                    [class.badge-danger]="job.status === 'FAILED'"
+                  >
+                    {{ job.status === 'COMPLETED' ? '✅ Hoàn tất' : (job.status === 'PROCESSING' ? '⚙️ Đang xử lý' : (job.status === 'PENDING' ? '⏳ Chờ hàng đợi' : '❌ Thất bại')) }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <button
+                    *ngIf="job.status === 'COMPLETED'"
+                    type="button"
+                    class="btn-action"
+                    (click)="downloadReportFile(job.jobId, job.fileName || 'BaoCao.pdf')"
+                  >
+                    ⬇️ Tải PDF
+                  </button>
+                  <span *ngIf="job.status !== 'COMPLETED'" class="text-muted">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeHistoryModal()">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

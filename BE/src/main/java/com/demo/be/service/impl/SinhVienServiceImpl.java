@@ -251,8 +251,11 @@ public class SinhVienServiceImpl implements SinhVienService {
     }
 
     private void apply(SinhVienRequest request, SinhVien sinhVien) {
-        if (request.ngaySinh() != null && request.ngayNhapHoc() != null) {
-            if (!request.ngaySinh().isBefore(request.ngayNhapHoc())) {
+        if (request.ngaySinh() != null) {
+            if (!request.ngaySinh().isBefore(LocalDate.now())) {
+                throw new IllegalArgumentException("Ngày sinh phải là ngày trong quá khứ.");
+            }
+            if (request.ngayNhapHoc() != null && !request.ngaySinh().isBefore(request.ngayNhapHoc())) {
                 throw new IllegalArgumentException("Ngày sinh phải nhỏ hơn ngày nhập học (thời gian trước phải nhỏ hơn thời gian sau).");
             }
         }

@@ -69,18 +69,28 @@ export class AdminSinhVienComponent implements OnInit {
 
       const start = startCtrl.value;
       const end = endCtrl.value;
+      const today = new Date().toISOString().slice(0, 10);
+      const errors: ValidationErrors = {};
+
+      if (start && start >= today) {
+        startCtrl.setErrors({ ...startCtrl.errors, futureDate: true });
+        errors['futureDate'] = true;
+      } else if (startCtrl.hasError('futureDate')) {
+        const currentErrors = { ...startCtrl.errors };
+        delete currentErrors['futureDate'];
+        startCtrl.setErrors(Object.keys(currentErrors).length > 0 ? currentErrors : null);
+      }
 
       if (start && end && start >= end) {
         endCtrl.setErrors({ ...endCtrl.errors, dateBefore: true });
-        return { dateRangeInvalid: true };
-      } else {
-        if (endCtrl.hasError('dateBefore')) {
-          const errors = { ...endCtrl.errors };
-          delete errors['dateBefore'];
-          endCtrl.setErrors(Object.keys(errors).length > 0 ? errors : null);
-        }
-        return null;
+        errors['dateRangeInvalid'] = true;
+      } else if (endCtrl.hasError('dateBefore')) {
+        const currentErrors = { ...endCtrl.errors };
+        delete currentErrors['dateBefore'];
+        endCtrl.setErrors(Object.keys(currentErrors).length > 0 ? currentErrors : null);
       }
+
+      return Object.keys(errors).length > 0 ? errors : null;
     };
   }
 
@@ -98,8 +108,8 @@ export class AdminSinhVienComponent implements OnInit {
       hoTen: ['', [Validators.required, Validators.maxLength(150)]],
       ngaySinh: [''],
       gioiTinh: ['Nam'],
-      email: [''],
-      soDienThoai: ['', [Validators.maxLength(20)]],
+      email: ['', [Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/), Validators.maxLength(150)]],
+      soDienThoai: ['', [Validators.pattern(/^(0|\+84)[0-9]{9}$/), Validators.maxLength(20)]],
       diaChi: ['', [Validators.maxLength(255)]],
       ngayNhapHoc: ['2023-09-05'],
       lopId: ['', Validators.required],
@@ -177,6 +187,14 @@ export class AdminSinhVienComponent implements OnInit {
       return;
     }
 
+    const today = new Date().toISOString().slice(0, 10);
+    if (val.ngaySinh && val.ngaySinh >= today) {
+      this.form.markAllAsTouched();
+      this.toastService.error('Ngày sinh phải là ngày trong quá khứ.', 'Ngày sinh không hợp lệ');
+      this.cd.detectChanges();
+      return;
+    }
+
     if (val.ngaySinh && val.ngayNhapHoc && val.ngaySinh >= val.ngayNhapHoc) {
       this.form.markAllAsTouched();
       this.toastService.error('Thời gian trước phải nhỏ hơn thời gian sau (Ngày sinh phải nhỏ hơn ngày nhập học).', 'Lỗi khoảng thời gian');
@@ -186,7 +204,13 @@ export class AdminSinhVienComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastService.warning('Vui lòng kiểm tra lại các trường thông tin không hợp lệ (viền đỏ).', 'Dữ liệu chưa đúng');
+      if (this.form.get('email')?.invalid) {
+        this.toastService.warning('Email không đúng định dạng (VD: example@stu.edu.vn).', 'Email không hợp lệ');
+      } else if (this.form.get('soDienThoai')?.invalid) {
+        this.toastService.warning('Số điện thoại không đúng định dạng (gồm 10 chữ số, VD: 0987654321 hoặc +84987654321).', 'Số điện thoại không hợp lệ');
+      } else {
+        this.toastService.warning('Vui lòng kiểm tra lại các trường thông tin không hợp lệ (viền đỏ).', 'Dữ liệu chưa đúng');
+      }
       this.cd.detectChanges();
       return;
     }
@@ -196,7 +220,7 @@ export class AdminSinhVienComponent implements OnInit {
       hoTen: hoTen,
       ngaySinh: val.ngaySinh || null,
       gioiTinh: val.gioiTinh || 'Nam',
-      email: this.editingId === null ? undefined : (val.email?.trim() || undefined),
+      email: val.email?.trim() || undefined,
       soDienThoai: val.soDienThoai?.trim() || null,
       diaChi: val.diaChi?.trim() || null,
       ngayNhapHoc: val.ngayNhapHoc || null,

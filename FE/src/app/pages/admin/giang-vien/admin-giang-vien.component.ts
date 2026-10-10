@@ -60,8 +60,8 @@ export class AdminGiangVienComponent implements OnInit {
   protected readonly form = this.fb.group({
     maGiangVien: [''],
     hoTen: ['', [Validators.required, Validators.maxLength(150)]],
-    email: [''],
-    soDienThoai: ['', [Validators.maxLength(20)]],
+    email: ['', [Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/), Validators.maxLength(150)]],
+    soDienThoai: ['', [Validators.pattern(/^(0|\+84)[0-9]{9}$/), Validators.maxLength(20)]],
     hocVi: ['Thạc sĩ', [Validators.required]],
     chuyenMon: ['', [Validators.maxLength(150)]],
     khoaId: ['', Validators.required],
@@ -147,7 +147,13 @@ export class AdminGiangVienComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastService.warning('Vui lòng kiểm tra lại thông tin không hợp lệ.', 'Dữ liệu chưa đúng');
+      if (this.form.get('email')?.invalid) {
+        this.toastService.warning('Email không đúng định dạng (VD: giangvien@stu.edu.vn).', 'Email không hợp lệ');
+      } else if (this.form.get('soDienThoai')?.invalid) {
+        this.toastService.warning('Số điện thoại không đúng định dạng (gồm 10 chữ số, VD: 0901234567 hoặc +84901234567).', 'Số điện thoại không hợp lệ');
+      } else {
+        this.toastService.warning('Vui lòng kiểm tra lại thông tin không hợp lệ (các trường viền đỏ).', 'Dữ liệu chưa đúng');
+      }
       this.cd.detectChanges();
       return;
     }
@@ -155,7 +161,7 @@ export class AdminGiangVienComponent implements OnInit {
     const payload = {
       maGiangVien: this.editingId === null ? undefined : (val.maGiangVien?.trim() || undefined),
       hoTen: hoTen,
-      email: this.editingId === null ? undefined : (val.email?.trim() || undefined),
+      email: val.email?.trim() || undefined,
       soDienThoai: val.soDienThoai?.trim() || null,
       hocVi: val.hocVi?.trim(),
       chuyenMon: val.chuyenMon?.trim() || null,
